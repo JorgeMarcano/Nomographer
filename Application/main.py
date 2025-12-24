@@ -151,6 +151,7 @@ class MainApp(tk.Tk):
             # Main entry (unchanged)
             ttk.Label(row, text=f"F{i + 1}(x)=").pack(side="left", padx=(0, 5))
             main_entry = ttk.Entry(row, width=30)
+            main_entry.insert(0, "x")
             main_entry.pack(side="left", padx=(0, 10))
             main_entry.bind("<Return>", self.update_formulas)
 
@@ -162,6 +163,7 @@ class MainApp(tk.Tk):
                 validate="key",
                 validatecommand=vcmd
             )
+            min_entry.insert(0, "0.0")
             min_entry.pack(side="left", padx=(0, 10))
             min_entry.bind("<Return>", self.update_ranges)
 
@@ -173,6 +175,7 @@ class MainApp(tk.Tk):
                 validate="key",
                 validatecommand=vcmd
             )
+            max_entry.insert(0, "1.0")
             max_entry.pack(side="left")
             max_entry.bind("<Return>", self.update_ranges)
 

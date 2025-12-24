@@ -84,6 +84,14 @@ class Nomograph():
         else:
             variables_to_draw = variables[:]
 
+def parallel_builder(F1, F2, F3, u1_range, u2_range, u3_range):
+    nomo = Nomograph()
+
+    nomo.update_range(0, u1_range)
+    nomo.update_range(1, u2_range)
+    nomo.update_range(2, u3_range)
+
+
 class Parallel(Nomograph):
     def __init__(self, F1, F2, F3, u1_range, u2_range, u3_range):
         super().__init__()
