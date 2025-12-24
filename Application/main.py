@@ -11,7 +11,7 @@ class MainApp(tk.Tk):
 
         self.nomograph = None
 
-        self.create_menu()
+        # self.create_menu()
 
         # Load data
         self.types = self.load_json("Types.json")
@@ -63,6 +63,7 @@ class MainApp(tk.Tk):
             *self.type_lookup.keys()
         )
         self.dropdown.pack(side="left", padx=10)
+        self.dropdown.config(state="disabled")
 
         # Description label
         self.description_label = tk.Label(
@@ -148,7 +149,7 @@ class MainApp(tk.Tk):
             row.pack(anchor="w", pady=2)
 
             # Main entry (unchanged)
-            ttk.Label(row, text=f"F{i + 1}(x):").pack(side="left", padx=(0, 5))
+            ttk.Label(row, text=f"F{i + 1}(x)=").pack(side="left", padx=(0, 5))
             main_entry = ttk.Entry(row, width=30)
             main_entry.pack(side="left", padx=(0, 10))
             main_entry.bind("<Return>", self.update_formulas)

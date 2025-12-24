@@ -3,7 +3,7 @@ import sympy as sp
 
 # The nomograph is set up as a list of x, y pairs of 3 curves
 class Nomograph():
-    def __init__(self, variables):
+    def __init__(self, variables=3):
         self.variables = variables
         self.value_ranges = [(0, 1) for _ in range(variables)]
         # self.matrix = np.ones((3, 3))
@@ -15,7 +15,7 @@ class Nomograph():
 
     # Updates the range of one of the variables
     def update_range(index, new_range):
-        if index < self.vairbales:
+        if index < self.variables:
             self.value_ranges[index] = new_range
 
     # Scales the axes
