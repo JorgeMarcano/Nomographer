@@ -14,7 +14,7 @@ class Nomograph():
         ])
 
     # Updates the range of one of the variables
-    def update_range(index, new_range):
+    def update_range(self, index, new_range):
         if index < self.variables:
             self.value_ranges[index] = new_range
 
@@ -79,7 +79,7 @@ class Nomograph():
     # Draw the nomograph on a screen TODO
     def draw(self, canvas, variables=None):
         # if None, then draw all variables, otherwise just the indexes sent
-        if vairbales == None:
+        if variables == None:
             variables_to_draw = [i for i in range(self.variables)]
         else:
             variables_to_draw = variables[:]
