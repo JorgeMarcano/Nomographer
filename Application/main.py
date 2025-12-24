@@ -140,6 +140,9 @@ class MainApp(tk.Tk):
         # Register validation command once
         vcmd = (self.register(self.validate_numeric), "%P")
 
+        if (count <= 0):
+            return
+
         for i in range(count):
             row = ttk.Frame(self.entries_frame)
             row.pack(anchor="w", pady=2)
@@ -212,7 +215,7 @@ class MainApp(tk.Tk):
             fill="black"
         )
 
-        update_canvas()
+        self.update_canvas()
 
     # ---------- Menu Actions ----------
     def new_file(self):
