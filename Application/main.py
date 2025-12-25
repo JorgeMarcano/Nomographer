@@ -2,6 +2,8 @@ import json
 import tkinter as tk
 from tkinter import ttk
 
+import Nomograph
+
 
 class MainApp(tk.Tk):
     def __init__(self):
@@ -9,7 +11,8 @@ class MainApp(tk.Tk):
 
         self.title("Nomograph Builder")
 
-        self.nomograph = None
+        self.nomograph = Nomograph.Nomograph()
+        Nomograph.parallel_builder("t", "t", "t", (0, 1), (0, 1), (0, 1), self.nomograph)
 
         # self.create_menu()
 
@@ -154,6 +157,7 @@ class MainApp(tk.Tk):
             main_entry.insert(0, "x")
             main_entry.pack(side="left", padx=(0, 10))
             main_entry.bind("<Return>", self.update_formulas)
+            main_entry.bind("<FocusOut>", self.update_formulas)
 
              # Min entry (numeric only)
             ttk.Label(row, text="Min").pack(side="left", padx=(0, 2))
@@ -166,6 +170,7 @@ class MainApp(tk.Tk):
             min_entry.insert(0, "0.0")
             min_entry.pack(side="left", padx=(0, 10))
             min_entry.bind("<Return>", self.update_ranges)
+            min_entry.bind("<FocusOut>", self.update_ranges)
 
             # Max entry (numeric only)
             ttk.Label(row, text="Max").pack(side="left", padx=(0, 2))
@@ -178,6 +183,7 @@ class MainApp(tk.Tk):
             max_entry.insert(0, "1.0")
             max_entry.pack(side="left")
             max_entry.bind("<Return>", self.update_ranges)
+            max_entry.bind("<FocusOut>", self.update_ranges)
 
             self.entries.append({
                 "main": main_entry,
@@ -190,19 +196,38 @@ class MainApp(tk.Tk):
         widget = event.widget
 
         for row, entry_group in enumerate(self.entries):
-            for key, entry in entry_group.items():
-                if entry is widget:
-                    new_min = entry_group["min"].get()
-                    new_max = entry_group["max"].get()
-                    self.nomograph.update_range(row, (new_min, new_max))
+            if widget in entry_group.values():
+                new_min = entry_group["min"].get()
+                if new_min == "":
+                    entry_group["min"].insert(0, "0.0")
+                    new_min = 0
+                else:
+                    new_min = float(new_min)
+
+                new_max = entry_group["max"].get()
+                if new_max == "":
+                    entry_group["min"].insert(0, "0.0")
+                    new_max = 0
+                else:
+                    new_max = float(new_max)
+
+                self.nomograph.update_range(row, (new_min, new_max))
 
         self.update_canvas()
 
     def update_formulas(self, event):
+        # Updates a range, then updates the canvas
+        widget = event.widget
+
+        for row, entry_group in enumerate(self.entries):
+            if widget in entry_group.values():
+                continue
+
         self.update_canvas()
 
     def update_canvas(self):
-        pass
+        self.canvas.delete("all")
+        self.nomograph.draw(self.canvas, self.canvas_width, self.canvas_height)
 
      # ---------- Canvas ----------
     def on_canvas_resize(self, event):
