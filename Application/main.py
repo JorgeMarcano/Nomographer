@@ -286,8 +286,9 @@ class MainApp(tk.Tk):
 
         self.zoom_factor *= scale
 
-        # self.nomograph.scale_at_point(self.zoom_factor, self.zoom_factor, event.x, event.y)
-        self.nomograph.scale(self.zoom_factor, self.zoom_factor)
+        self.nomograph.scale_at_point(
+            self.zoom_factor, self.zoom_factor, event.x, event.y)
+        # self.nomograph.scale(self.zoom_factor, self.zoom_factor)
 
         self.nomograph.execute_last_transform()
         self.update_canvas()
