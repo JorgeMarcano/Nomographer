@@ -12,6 +12,9 @@ class MainApp(tk.Tk):
         self.title("Nomograph Builder")
 
         self.nomograph = Nomograph.Parallel(["t"] * 3, [(0, 1)] * 3)
+        self.nomograph.scale(100, 100)
+        self.nomograph.execute_last_transform()
+        self.nomograph.transform()
 
         # self.create_menu()
 
@@ -30,6 +33,11 @@ class MainApp(tk.Tk):
 
         # Trace selection changes
         self.selected_name.trace_add("write", self.on_select)
+
+        # Transformation States
+        self.last_mouse_pos = None
+        self.pan_vector = (0, 0)   # (dx, dy)
+        self.zoom_factor = 1.0     # overall scale
 
     def load_json(self, path):
         with open(path, "r") as file:
@@ -94,6 +102,10 @@ class MainApp(tk.Tk):
 
         # Optional: show canvas size for demo
         self.canvas.bind("<Configure>", self.on_canvas_resize)
+        self.canvas.bind("<ButtonPress-1>", self.on_mouse_press)
+        self.canvas.bind("<ButtonRelease-1>", self.on_mouse_press)
+        self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
+        self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
 
         # Generate the default selection
         self.on_select()
@@ -251,6 +263,46 @@ class MainApp(tk.Tk):
         # )
 
         self.update_canvas()
+
+    def on_mouse_press(self, event):
+        self.last_mouse_pos = (event.x, event.y)
+        self.nomograph.execute_last_transform()
+        self.zoom_factor = 1
+
+    def on_mouse_drag(self, event):
+        x0, y0 = self.last_mouse_pos
+        pan_vector = (event.x - x0, event.y - y0)
+        px, py = pan_vector
+
+        self.nomograph.translate(px, py)
+        self.nomograph.transform()
+
+        self.update_canvas()
+
+    # --------------------
+    # ZOOM CALLBACK
+    # --------------------
+
+    def on_mouse_wheel(self, event):
+        # Zoom direction
+        if event.delta > 0:
+            scale = 1.1
+        else:
+            scale = 0.9
+
+        self.zoom_factor *= scale
+
+        # self.nomograph.scale_at_point(self.zoom_factor, self.zoom_factor, event.x, event.y)
+        self.nomograph.scale(self.zoom_factor, self.zoom_factor)
+
+        self.nomograph.transform()
+        self.update_canvas()
+
+        # Zoom around mouse position
+        # canvas.scale("all", event.x, event.y, scale, scale)
+
+        # Optional debug
+        print("Zoom:", round(self.zoom_factor, 3))
 
     # ---------- Menu Actions ----------
     def new_file(self):

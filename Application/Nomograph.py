@@ -44,6 +44,18 @@ class Nomograph():
         # self.transformations.append(S)
         self.current_transformation = S
 
+    # Scales the axes while keeping a point without moving
+    def scale_at_point(self, sx, sy, px, py):
+        S = sp.Matrix([
+            [sx,        0,          0],
+            [0,         sy,         1],
+            [(sx-1)*px, (sy-1)*py,  1]
+        ])
+
+        # self.current_matrix = self.current_matrix * S
+        # self.transformations.append(S)
+        self.current_transformation = S
+
     # Translates the axes
     def translate(self, x, y):
         T = sp.Matrix([
@@ -119,6 +131,13 @@ class Nomograph():
         if self.current_transformation != None:
             self.current_matrix = self.current_matrix * self.current_transformation
 
+    def reset_transform(self):
+        self.transformation_matrix = sp.Matrix([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ])
+
     # Sets the base matrix and recomputes the transformations
     def set_base_matrix(self, base):
         self.base_matrix = base
@@ -132,13 +151,13 @@ class Nomograph():
         else:
             variables_to_draw = variables[:]
 
-        CENTER_X = width // 2
-        CENTER_Y = height // 2
-        SCALE = 100
+        # CENTER_X = width // 2
+        # CENTER_Y = height // 2
+        # SCALE = 100
 
         # Axes
-        canvas.create_line(0, CENTER_Y, width, CENTER_Y, fill="gray")
-        canvas.create_line(CENTER_X, 0, CENTER_X, height, fill="gray")
+        # canvas.create_line(0, CENTER_Y, width, CENTER_Y, fill="gray")
+        # canvas.create_line(CENTER_X, 0, CENTER_X, height, fill="gray")
 
         for var in variables_to_draw:
             x_func = sp.lambdify(self.t, self.current_matrix[var, 0], "numpy")
@@ -161,11 +180,13 @@ class Nomograph():
                 x = x_func(ti)
                 y = y_func(ti)
 
-                cx = CENTER_X + x * SCALE
-                cy = CENTER_Y - y * SCALE
+                # cx = CENTER_X + x * SCALE
+                # cy = CENTER_Y - y * SCALE
+                # cx = x * SCALE
+                # cy = y * SCALE
 
                 # points.extend([x, y])
-                points.extend([cx, cy])
+                points.extend([x, y])
 
             canvas.create_line(points, fill="blue", width=2, smooth=True)
 
@@ -180,19 +201,21 @@ class Nomograph():
                 x = x_func(ti)
                 y = y_func(ti)
 
-                cx = CENTER_X + x * SCALE
-                cy = CENTER_Y - y * SCALE
+                # cx = CENTER_X + x * SCALE
+                # cy = CENTER_Y - y * SCALE
+                # cx = x * SCALE
+                # cy = y * SCALE
 
                 # Marker
                 canvas.create_oval(
-                    cx - marker_radius, cy - marker_radius,
-                    cx + marker_radius, cy + marker_radius,
+                    x - marker_radius, y - marker_radius,
+                    x + marker_radius, y + marker_radius,
                     fill="red", outline=""
                 )
 
                 # Label (parameter value)
                 canvas.create_text(
-                    cx + 10, cy - 10,
+                    x + 10, y - 10,
                     text=f"{ti:.2f}",
                     font=("Arial", 8),
                     fill="black"
