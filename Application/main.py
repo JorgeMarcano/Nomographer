@@ -124,7 +124,6 @@ class MainApp(tk.Tk):
         self.update_idletasks()
         self.geometry("")
 
-
     def validate_numeric(self, value_if_allowed):
         """
         Allow only empty input or numeric values.
@@ -159,7 +158,7 @@ class MainApp(tk.Tk):
             main_entry.bind("<Return>", self.update_formulas)
             main_entry.bind("<FocusOut>", self.update_formulas)
 
-             # Min entry (numeric only)
+            # Min entry (numeric only)
             ttk.Label(row, text="Min").pack(side="left", padx=(0, 2))
             min_entry = ttk.Entry(
                 row,
@@ -229,7 +228,7 @@ class MainApp(tk.Tk):
         self.canvas.delete("all")
         self.nomograph.draw(self.canvas, self.canvas_width, self.canvas_height)
 
-     # ---------- Canvas ----------
+    # ---------- Canvas ----------
     def on_canvas_resize(self, event):
         self.canvas.delete("all")
 

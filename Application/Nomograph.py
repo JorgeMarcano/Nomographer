@@ -2,6 +2,7 @@ import numpy as np
 import sympy as sp
 from tkinter import Canvas
 
+
 # The nomograph is set up as a list of x, y pairs of 3 curves
 class Nomograph():
     def __init__(self, variables=3):
