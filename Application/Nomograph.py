@@ -1,6 +1,6 @@
 import numpy as np
 import sympy as sp
-from tkinter import Canvas
+# from tkinter import Canvas
 
 
 # The nomograph is set up as a list of x, y pairs of 3 curves
@@ -105,7 +105,7 @@ class Nomograph():
         self.current_transformation = F
 
     def execute_last_transform(self):
-        if self.current_transformation == None:
+        if self.current_transformation is None:
             return
 
         # self.transformations.append(self.current_transformation)
@@ -128,7 +128,7 @@ class Nomograph():
         #     self.current_matrix = self.current_matrix * xfrm
         self.current_matrix = self.base_matrix * self.transformation_matrix
 
-        if self.current_transformation != None:
+        if self.current_transformation is not None:
             self.current_matrix = self.current_matrix * self.current_transformation
 
     def reset_transform(self):
@@ -146,7 +146,7 @@ class Nomograph():
     # Draw the nomograph on a screen TODO
     def draw(self, canvas, width, height, variables=None):
         # if None, then draw all variables, otherwise just the indexes sent
-        if variables == None:
+        if variables is None:
             variables_to_draw = [i for i in range(self.variables)]
         else:
             variables_to_draw = variables[:]
@@ -196,7 +196,10 @@ class Nomograph():
             graduation_step = 250      # every N points
             marker_radius = 3
 
-            for i in range(0, num_points, graduation_step):
+            marker_set = set(range(0, num_points, graduation_step))
+            # Add last point to ensure label is placed for it too
+            marker_set.add(num_points - 1)
+            for i in marker_set:
                 ti = ts[i]
                 x = x_func(ti)
                 y = y_func(ti)
@@ -224,6 +227,7 @@ class Nomograph():
     def update_formula(self, index, func):
         pass
 
+
 class Parallel(Nomograph):
     def __init__(self, funcs, ranges):
         super().__init__()
@@ -237,7 +241,7 @@ class Parallel(Nomograph):
             [0.5*sp.parse_expr(funcs[2]), 0.5, 1]
         ])
 
-        self.index_of_func = [(0,0), (1,0), (2,0)]
+        self.index_of_func = [(0, 0), (1, 0), (2, 0)]
 
         self.transform()
 
