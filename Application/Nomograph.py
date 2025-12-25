@@ -116,6 +116,9 @@ class Nomograph():
         #     self.current_matrix = self.current_matrix * xfrm
         self.current_matrix = self.base_matrix * self.transformation_matrix
 
+        if self.current_transformation != None:
+            self.current_matrix = self.current_matrix * self.current_transformation
+
     # Sets the base matrix and recomputes the transformations
     def set_base_matrix(self, base):
         self.base_matrix = base
