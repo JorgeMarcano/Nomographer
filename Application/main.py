@@ -284,7 +284,20 @@ class MainApp(tk.Tk):
         # Zoom direction
         scale = 1.1 if event.delta > 0 else 0.9
 
-        self.nomograph.scale_at_point(scale, scale, event.x, event.y)
+        shift_pressed = event.state & 0x0001
+        ctrl_pressed  = event.state & 0x0004
+
+        if shift_pressed and not ctrl_pressed:
+            sx = 1.0
+            sy = scale
+        elif ctrl_pressed and not shift_pressed:
+            sx = scale
+            sy = 1.0
+        else:
+            sx = scale
+            sy = scale
+
+        self.nomograph.scale_at_point(sx, sy, event.x, event.y)
 
         self.nomograph.execute_last_transform()
         self.update_canvas()
