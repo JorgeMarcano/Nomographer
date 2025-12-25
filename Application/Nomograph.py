@@ -112,6 +112,8 @@ class Nomograph():
         self.transformation_matrix = self.transformation_matrix * self.current_transformation
         self.current_transformation = None
 
+        self.transform()
+
     # Aligns an axis with a desired curve (if possible) TODO
     def align(self, index, x, y):
         pass

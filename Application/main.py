@@ -14,7 +14,6 @@ class MainApp(tk.Tk):
         self.nomograph = Nomograph.Parallel(["t"] * 3, [(0, 1)] * 3)
         self.nomograph.scale(100, 100)
         self.nomograph.execute_last_transform()
-        self.nomograph.transform()
 
         # self.create_menu()
 
@@ -26,7 +25,6 @@ class MainApp(tk.Tk):
         self.selected_name = tk.StringVar()
         self.selected_name.set(self.types[0]["name"])
         self.last_selected_name = ""
-        self.status_var = tk.StringVar()
 
         # Build UI
         self.entries = []
@@ -38,7 +36,6 @@ class MainApp(tk.Tk):
         # Transformation States
         self.last_mouse_pos = None
         self.pan_vector = (0, 0)   # (dx, dy)
-        self.zoom_factor = 1.0     # overall scale
 
     def load_json(self, path):
         with open(path, "r") as file:
@@ -100,10 +97,7 @@ class MainApp(tk.Tk):
             highlightbackground="#999"
         )
         self.canvas.pack(fill="both", expand=True)
-        self.status_var.set("")
-        self.status_message = ttk.Label(self.main_frame, textvariable=self.status_var,
-                                        justify=tk.LEFT, anchor='w')
-        self.status_message.pack(fill="both", padx=10)
+
         # Optional: show canvas size for demo
         self.canvas.bind("<Configure>", self.on_canvas_resize)
         self.canvas.bind("<ButtonPress-1>", self.on_mouse_press)
@@ -140,6 +134,7 @@ class MainApp(tk.Tk):
         self.update_idletasks()
         self.geometry("")
 
+
     def validate_numeric(self, value_if_allowed):
         """
         Allow only empty input or numeric values.
@@ -147,10 +142,11 @@ class MainApp(tk.Tk):
         if value_if_allowed == "" or value_if_allowed == "-":
             return True
         try:
-            float(value_if_allowed)
+            temp = float(value_if_allowed)
             return True
         except ValueError:
             return False
+
 
     def build_entries(self, count):
         # Clear old entries
@@ -177,7 +173,7 @@ class MainApp(tk.Tk):
             main_entry.bind("<Return>", self.update_formulas)
             main_entry.bind("<FocusOut>", self.update_formulas)
 
-            # Min entry (numeric only)
+             # Min entry (numeric only)
             ttk.Label(row, text="Min").pack(side="left", padx=(0, 2))
             min_entry = ttk.Entry(
                 row,
@@ -249,13 +245,14 @@ class MainApp(tk.Tk):
         self.canvas.delete("all")
         self.nomograph.draw(self.canvas, self.canvas_width, self.canvas_height)
 
-    # ---------- Canvas ----------
+     # ---------- Canvas ----------
     def on_canvas_resize(self, event):
         self.canvas_width = event.width
         self.canvas_height = event.height
 
         # # Example drawing: centered text showing canvas size
-        self.status_var.set(f"Canvas size: {event.width} x {event.height}")
+        # self.canvas.delete("all")
+        # text = f"Canvas size: {event.width} x {event.height}"
         # self.canvas.create_text(
         #     event.width // 2,
         #     event.height // 2,
@@ -268,7 +265,6 @@ class MainApp(tk.Tk):
     def on_mouse_press(self, event):
         self.last_mouse_pos = (event.x, event.y)
         self.nomograph.execute_last_transform()
-        self.zoom_factor = 1
 
     def on_mouse_drag(self, event):
         x0, y0 = self.last_mouse_pos
@@ -286,17 +282,14 @@ class MainApp(tk.Tk):
 
     def on_mouse_wheel(self, event):
         # Zoom direction
-        if event.delta > 0:
-            scale = 1.1
-        else:
-            scale = 0.9
+        scale = 1.1 if event.delta > 0 else 0.9
 
         self.zoom_factor *= scale
 
         # self.nomograph.scale_at_point(self.zoom_factor, self.zoom_factor, event.x, event.y)
         self.nomograph.scale(self.zoom_factor, self.zoom_factor)
 
-        self.nomograph.transform()
+        self.nomograph.execute_last_transform()
         self.update_canvas()
 
         # Zoom around mouse position
