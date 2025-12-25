@@ -175,23 +175,27 @@ class Nomograph():
                     fill="black"
                 )
 
+    def update_formula(self, index, func):
+        pass
 
-def parallel_builder(F1, F2, F3, u1_range, u2_range, u3_range, nomo=None):
-    if nomo == None:
-        nomo = Nomograph()
+class Parallel(Nomograph):
+    def __init__(self, funcs, ranges):
+        super().__init__()
 
-    nomo.update_range(0, u1_range)
-    nomo.update_range(1, u2_range)
-    nomo.update_range(2, u3_range)
+        for ind, val_range in enumerate(ranges):
+            self.update_range(ind, val_range)
 
+        self.base_matrix = sp.Matrix([
+            [sp.parse_expr(funcs[0]), 0, 1],
+            [sp.parse_expr(funcs[1]), 1, 1],
+            [0.5*sp.parse_expr(funcs[2]), 0.5, 1]
+        ])
 
+        self.index_of_func = [(0,0), (1,0), (2,0)]
 
-    matrix = sp.Matrix([
-        [sp.parse_expr(F1), 0, 1],
-        [sp.parse_expr(F2), 1, 1],
-        [0.5*sp.parse_expr(F3), 0.5, 1]
-    ])
+        self.transform()
 
-    nomo.set_base_matrix(matrix)
+    def update_formula(self, index, func):
+        self.base_matrix[self.index_of_func[index]] = func
 
-    return nomo
+        self.transform()

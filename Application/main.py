@@ -11,8 +11,7 @@ class MainApp(tk.Tk):
 
         self.title("Nomograph Builder")
 
-        self.nomograph = Nomograph.Nomograph()
-        Nomograph.parallel_builder("t", "t", "t", (0, 1), (0, 1), (0, 1), self.nomograph)
+        self.nomograph = Nomograph.Parallel(["t"] * 3, [(0, 1)] * 3)
 
         # self.create_menu()
 
@@ -125,6 +124,7 @@ class MainApp(tk.Tk):
         self.update_idletasks()
         self.geometry("")
 
+
     def validate_numeric(self, value_if_allowed):
         """
         Allow only empty input or numeric values.
@@ -159,7 +159,7 @@ class MainApp(tk.Tk):
             main_entry.bind("<Return>", self.update_formulas)
             main_entry.bind("<FocusOut>", self.update_formulas)
 
-            # Min entry (numeric only)
+             # Min entry (numeric only)
             ttk.Label(row, text="Min").pack(side="left", padx=(0, 2))
             min_entry = ttk.Entry(
                 row,
@@ -219,23 +219,9 @@ class MainApp(tk.Tk):
         # Updates a range, then updates the canvas
         widget = event.widget
 
-        # for row, entry_group in enumerate(self.entries):
-        #     if widget in entry_group.values():
-        #         continue
-
-        ranges = []
-        for entry in self.entries:
-            val_range = (float(entry["min"].get()), float(entry["max"].get()))
-            ranges.append(val_range)
-
-        Nomograph.parallel_builder(
-            self.entries[0]["main"].get(),
-            self.entries[1]["main"].get(),
-            self.entries[2]["main"].get(),
-            ranges[0],
-            ranges[1],
-            ranges[2],
-            self.nomograph)
+        for row, entry_group in enumerate(self.entries):
+            if widget in entry_group.values():
+                self.nomograph.update_formula(row, widget.get())
 
         self.update_canvas()
 
@@ -243,20 +229,20 @@ class MainApp(tk.Tk):
         self.canvas.delete("all")
         self.nomograph.draw(self.canvas, self.canvas_width, self.canvas_height)
 
-    # ---------- Canvas ----------
+     # ---------- Canvas ----------
     def on_canvas_resize(self, event):
-        self.canvas.delete("all")
-
-        # Example drawing: centered text showing canvas size
         self.canvas_width = event.width
         self.canvas_height = event.height
-        text = f"Canvas size: {event.width} x {event.height}"
-        self.canvas.create_text(
-            event.width // 2,
-            event.height // 2,
-            text=text,
-            fill="black"
-        )
+
+        # # Example drawing: centered text showing canvas size
+        # self.canvas.delete("all")
+        # text = f"Canvas size: {event.width} x {event.height}"
+        # self.canvas.create_text(
+        #     event.width // 2,
+        #     event.height // 2,
+        #     text=text,
+        #     fill="black"
+        # )
 
         self.update_canvas()
 
