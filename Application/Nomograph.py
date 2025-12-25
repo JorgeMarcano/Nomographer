@@ -17,7 +17,13 @@ class Nomograph():
             [0, 0, 1]
         ])
 
-        self.transformations = []
+        self.transformation_matrix = sp.Matrix([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ])
+        # self.transformations = []
+        self.current_transformation = None
 
         self.current_matrix = self.base_matrix
 
@@ -34,8 +40,9 @@ class Nomograph():
             [0,   0,   1]
         ])
 
-        self.current_matrix = self.current_matrix * S
-        self.transformations.append(S)
+        # self.current_matrix = self.current_matrix * S
+        # self.transformations.append(S)
+        self.current_transformation = S
 
     # Translates the axes
     def translate(self, x, y):
@@ -45,8 +52,9 @@ class Nomograph():
             [x,   y,   1]
         ])
 
-        self.current_matrix = self.current_matrix * T
-        self.transformations.append(T)
+        # self.current_matrix = self.current_matrix * T
+        # self.transformations.append(T)
+        self.current_transformation = T
 
     # Rotates around the origin by and angle theta
     def rotate(self, theta):
@@ -56,8 +64,9 @@ class Nomograph():
             [0,             0,              1]
         ])
 
-        self.current_matrix = self.current_matrix * R
-        self.transformations.append(R)
+        # self.current_matrix = self.current_matrix * R
+        # self.transformations.append(R)
+        self.current_transformation = R
 
     # Shears the axes by their corresponding values
     def shear(self, theta_x, theta_y):
@@ -67,8 +76,9 @@ class Nomograph():
             [0,               0,                1]
         ])
 
-        self.current_matrix = self.current_matrix * S
-        self.transformations.append(S)
+        # self.current_matrix = self.current_matrix * S
+        # self.transformations.append(S)
+        self.current_transformation = S
 
     # Flips the two axes (same as a rotation by 90 then a reflection)
     def flip(self):
@@ -78,8 +88,17 @@ class Nomograph():
             [0,   0,   1]
         ])
 
-        self.current_matrix = self.current_matrix * F
-        self.transformations.append(F)
+        # self.current_matrix = self.current_matrix * F
+        # self.transformations.append(F)
+        self.current_transformation = F
+
+    def execute_last_transform(self):
+        if self.current_transformation == None:
+            return
+
+        # self.transformations.append(self.current_transformation)
+        self.transformation_matrix = self.transformation_matrix * self.current_transformation
+        self.current_transformation = None
 
     # Aligns an axis with a desired curve (if possible) TODO
     def align(self, index, x, y):
@@ -91,10 +110,11 @@ class Nomograph():
 
     # Performs the transformations in the queue
     def transform(self):
-        self.current_matrix = self.base_matrix
+        # self.current_matrix = self.base_matrix
 
-        for xfrm in self.transformations:
-            self.current_matrix = self.current_matrix * xfrm
+        # for xfrm in self.transformations:
+        #     self.current_matrix = self.current_matrix * xfrm
+        self.current_matrix = self.base_matrix * self.transformation_matrix
 
     # Sets the base matrix and recomputes the transformations
     def set_base_matrix(self, base):

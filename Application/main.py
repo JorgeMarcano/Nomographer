@@ -129,10 +129,14 @@ class MainApp(tk.Tk):
         """
         Allow only empty input or numeric values.
         """
-        if value_if_allowed == "":
+        if value_if_allowed == "" or value_if_allowed == "-":
             return True
-        return value_if_allowed.replace('.', '', 1).isdigit()
-        # return value_if_allowed.isdigit()
+        try:
+            temp = float(value_if_allowed)
+            return True
+        except ValueError:
+            return False
+
 
     def build_entries(self, count):
         # Clear old entries
@@ -198,15 +202,17 @@ class MainApp(tk.Tk):
         for row, entry_group in enumerate(self.entries):
             if widget in entry_group.values():
                 new_min = entry_group["min"].get()
-                if new_min == "":
+                if new_min == "" or new_min == "-":
+                    entry_group["min"].delete(0, tk.END)
                     entry_group["min"].insert(0, "0.0")
                     new_min = 0
                 else:
                     new_min = float(new_min)
 
                 new_max = entry_group["max"].get()
-                if new_max == "":
-                    entry_group["min"].insert(0, "0.0")
+                if new_max == "" or new_max == "-":
+                    entry_group["max"].delete(0, tk.END)
+                    entry_group["max"].insert(0, "0.0")
                     new_max = 0
                 else:
                     new_max = float(new_max)
