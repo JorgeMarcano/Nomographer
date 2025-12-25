@@ -284,20 +284,10 @@ class MainApp(tk.Tk):
         # Zoom direction
         scale = 1.1 if event.delta > 0 else 0.9
 
-        self.zoom_factor *= scale
-
-        self.nomograph.scale_at_point(
-            self.zoom_factor, self.zoom_factor, event.x, event.y)
-        # self.nomograph.scale(self.zoom_factor, self.zoom_factor)
+        self.nomograph.scale_at_point(scale, scale, event.x, event.y)
 
         self.nomograph.execute_last_transform()
         self.update_canvas()
-
-        # Zoom around mouse position
-        # canvas.scale("all", event.x, event.y, scale, scale)
-
-        # Optional debug
-        print("Zoom:", round(self.zoom_factor, 3))
 
     # ---------- Menu Actions ----------
     def new_file(self):
