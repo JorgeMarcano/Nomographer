@@ -36,7 +36,7 @@ class Nomograph():
     def scale(self, x, y):
         S = sp.Matrix([
             [x,   0,   0],
-            [0,   y,   1],
+            [0,   y,   0],
             [0,   0,   1]
         ])
 
@@ -48,7 +48,7 @@ class Nomograph():
     def scale_at_point(self, sx, sy, px, py):
         S = sp.Matrix([
             [sx,        0,          0],
-            [0,         sy,         1],
+            [0,         sy,         0],
             [(sx-1)*px, (sy-1)*py,  1]
         ])
 
