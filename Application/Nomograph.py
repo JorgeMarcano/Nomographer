@@ -49,7 +49,7 @@ class Nomograph():
         S = sp.Matrix([
             [sx,        0,          0],
             [0,         sy,         0],
-            [(sx-1)*px, (sy-1)*py,  1]
+            [(1-sx)*px, (1-sy)*py,  1]
         ])
 
         # self.current_matrix = self.current_matrix * S
