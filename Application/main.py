@@ -51,6 +51,7 @@ class MainApp(tk.Tk):
         menubar.add_cascade(label="File", menu=file_menu)
         self.config(menu=menubar)
 
+    # ---------- Create Window Elements ----------
     def create_widgets(self):
         self.main_frame = ttk.Frame(self, padding=10)
         self.main_frame.pack(fill="both", expand=True)
@@ -152,9 +153,9 @@ class MainApp(tk.Tk):
             row.pack(anchor="w", pady=2)
 
             # Main entry (unchanged)
-            ttk.Label(row, text=f"F{i + 1}(x)=").pack(side="left", padx=(0, 5))
+            ttk.Label(row, text=f"F{i + 1}(t)=").pack(side="left", padx=(0, 5))
             main_entry = ttk.Entry(row, width=30)
-            main_entry.insert(0, "x")
+            main_entry.insert(0, "t")
             main_entry.pack(side="left", padx=(0, 10))
             main_entry.bind("<Return>", self.update_formulas)
             main_entry.bind("<FocusOut>", self.update_formulas)
@@ -219,9 +220,23 @@ class MainApp(tk.Tk):
         # Updates a range, then updates the canvas
         widget = event.widget
 
-        for row, entry_group in enumerate(self.entries):
-            if widget in entry_group.values():
-                continue
+        # for row, entry_group in enumerate(self.entries):
+        #     if widget in entry_group.values():
+        #         continue
+
+        ranges = []
+        for entry in self.entries:
+            val_range = (float(entry["min"].get()), float(entry["max"].get()))
+            ranges.append(val_range)
+
+        Nomograph.parallel_builder(
+            self.entries[0]["main"].get(),
+            self.entries[1]["main"].get(),
+            self.entries[2]["main"].get(),
+            ranges[0],
+            ranges[1],
+            ranges[2],
+            self.nomograph)
 
         self.update_canvas()
 
