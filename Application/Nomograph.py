@@ -5,7 +5,8 @@ import sympy as sp
 
 # The nomograph is set up as a list of x, y pairs of 3 curves
 class Nomograph():
-    def __init__(self, *, other=None, funcs=None):
+    def __init__(self, name, *, other=None, funcs=None):
+        self.name = name
         self.t = sp.symbols('t')
 
         self.funcs = [] if (funcs is None) else [sp.parse_expr(func) for func in funcs]
@@ -124,7 +125,6 @@ class Nomograph():
         # self.transformations.append(F)
         self.current_transformation = P
 
-
     def execute_last_transform(self):
         if self.current_transformation is None:
             return
@@ -141,7 +141,7 @@ class Nomograph():
 
     # Reduced the matrix to a nomographic form TODO
     def reduce(self):
-        #easiest way to reduce is simply divide each row by the last column's value
+        # easiest way to reduce is simply divide each row by the last column's value
         is_ok = True
         for row in range(self.variables):
             temp_val = self.current_matrix[row, 2]
@@ -210,7 +210,7 @@ class Nomograph():
             # -----------------------------
             points = np.column_stack((x_func(ts), y_func(ts)))
 
-            draw_line_func(points.tolist())
+            draw_line_func(self.name, points.tolist())
 
             # -----------------------------
             # Draw graduations of t
@@ -230,13 +230,13 @@ class Nomograph():
                 p2x = px - 2*tick_size*mx
                 p2y = py - 2*tick_size*my
 
-                draw_line_func([[p1x, p1y], [p2x, p2y]])
+                draw_line_func(self.name, [[p1x, p1y], [p2x, p2y]])
 
                 p1x = px + 4*tick_size*mx
                 p1y = py + 4*tick_size*my
 
                 # Label (parameter value)
-                gui_draw_text(p1x, p1y, f"{ti:.2f}")
+                gui_draw_text(self.name, p1x, p1y, f"{ti:.2f}")
 
             px = x_func(minor_ticks)
             py = y_func(minor_ticks)
@@ -251,7 +251,7 @@ class Nomograph():
             points = np.column_stack((minor_ticks, p1x, p1y, p2x, p2y, px, py))
 
             for ti, p1x, p1y, p2x, p2y, px, py in points:
-                draw_line_func([[p1x, p1y], [p2x, p2y]])
+                draw_line_func(self.name, [[p1x, p1y], [p2x, p2y]])
 
     def update_formula(self, index, func):
         if isinstance(func, str):
@@ -273,10 +273,10 @@ class Nomograph():
 class Parallel(Nomograph):
     index_of_func = [(0, 0), (1, 0), (2, 0)]
 
-    def __init__(self, *, other=None, funcs=None, ranges=None):
+    def __init__(self, name, *, other=None, funcs=None, ranges=None):
         if funcs is None:
             funcs = ["t"]*3
-        super().__init__(funcs=funcs)
+        super().__init__(name=name, funcs=funcs)
 
         if other is None:
             for ind, val_range in enumerate(ranges):
@@ -297,7 +297,7 @@ class Parallel(Nomograph):
     def update_formula(self, index, func):
         super().update_formula(index, func)
 
-        if index !=2:
+        if index != 2:
             self.base_matrix[Parallel.index_of_func[index]] = self.funcs[index]
 
         else:
@@ -309,10 +309,10 @@ class Parallel(Nomograph):
 class Z_Chart(Nomograph):
     index_of_func = [(0, 1), (1, 0), (2, 1)]
 
-    def __init__(self, *, other=None, funcs=None, ranges=None):
+    def __init__(self, name, *, other=None, funcs=None, ranges=None):
         if funcs is None:
             funcs = ["t"]*3
-        super().__init__(funcs=funcs)
+        super().__init__(name=name, funcs=funcs)
 
         if other is None:
             for ind, val_range in enumerate(ranges):
@@ -333,7 +333,7 @@ class Z_Chart(Nomograph):
     def update_formula(self, index, func):
         super().update_formula(index, func)
 
-        if index !=1:
+        if index != 1:
             self.base_matrix[Parallel.index_of_func[index]] = self.funcs[index]
 
         else:
@@ -354,7 +354,7 @@ class Ticks():
         if not self.is_log and self.maj_tick <= 0:
             return np.array([])
         elif self.is_log and self.maj_tick <= 1:
-                return np.array([])
+            return np.array([])
 
         temp = self.min
 
@@ -375,7 +375,7 @@ class Ticks():
         if not self.is_log and self.min_tick <= 0:
             return np.array([])
         elif self.is_log and self.min_tick <= 1:
-                return np.array([])
+            return np.array([])
 
         if major_ticks is None:
             major_ticks = []

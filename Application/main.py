@@ -11,7 +11,8 @@ class MainApp(tk.Tk):
 
         self.title("Nomograph Builder")
 
-        self.nomograph = Nomograph.Parallel(funcs=["t"] * 3, ranges=[(0, 1)] * 3)
+        self.nomograph = Nomograph.Parallel(name="parallel", funcs=["t"] * 3, ranges=[(0, 1)] * 3)
+        self.selected_tag = None
         self.nomograph.scale(100, 100)
         self.nomograph.execute_last_transform()
 
@@ -138,9 +139,9 @@ class MainApp(tk.Tk):
 
         # Get a new nomograph
         if name == "Parallel":
-            self.nomograph = Nomograph.Parallel(other=self.nomograph)
+            self.nomograph = Nomograph.Parallel(name="parallel", other=self.nomograph)
         elif name == "N or Z":
-            self.nomograph = Nomograph.Z_Chart(other=self.nomograph)
+            self.nomograph = Nomograph.Z_Chart(name="incoming", other=self.nomograph)
 
         self.update_canvas()
 
@@ -314,21 +315,36 @@ class MainApp(tk.Tk):
 
         self.update_canvas()
 
-    def gui_draw_line(self, points):
+    def gui_draw_line(self, tag, points):
         # Blue for line, red for big tick, green for small tick
-        self.canvas.create_line(points, fill="black", width=1, smooth=True)
+        self.canvas.create_line(points, fill="black", width=1, smooth=True, tags=tag)
 
-    def gui_draw_text(self, px, py, text):
+    def gui_draw_text(self, tag, px, py, text):
         self.canvas.create_text(
             px, py,
             text=text,
             font=("Arial", 8),
-            fill="black"
+            fill="black",
+            tags=tag
         )
 
     def on_mouse_press(self, event):
         self.last_mouse_pos = (event.x, event.y)
         self.nomograph.execute_last_transform()
+        clicked_item = self.canvas.find_withtag("current")
+        if clicked_item:
+            # Get all tags associated with that specific item ID
+            item_id = clicked_item[0]
+            tags = self.canvas.gettags(item_id)
+            self.selected_tag = [t for t in tags if t != "current"][0]
+            self.canvas.itemconfigure(self.selected_tag, fill="blue")
+        else:
+            item_id = None
+            tags = None
+            if self.selected_tag:
+                self.canvas.itemconfigure(self.selected_tag, fill="black")
+            self.selected_tag = None
+        self.status_var.set(f"Clicked item ID: {item_id}, Tags: {tags}, Selected: {self.selected_tag}")
 
     def on_mouse_drag(self, event):
         x0, y0 = self.last_mouse_pos
