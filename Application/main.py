@@ -141,7 +141,9 @@ class MainApp(tk.Tk):
         if name == "Parallel":
             self.nomograph = Nomograph.Parallel(name="parallel", other=self.nomograph)
         elif name == "N or Z":
-            self.nomograph = Nomograph.Z_Chart(name="incoming", other=self.nomograph)
+            self.nomograph = Nomograph.Z_Chart(name="z_chart", other=self.nomograph)
+        elif name == "Concurrent":
+            self.nomograph = Nomograph.Concurrent(name="concurrent", other=self.nomograph)
 
         self.update_canvas()
 

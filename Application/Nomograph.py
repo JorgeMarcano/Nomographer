@@ -5,14 +5,19 @@ import sympy as sp
 
 # The nomograph is set up as a list of x, y pairs of 3 curves
 class Nomograph():
-    def __init__(self, name, *, other=None, funcs=None):
+    def __init__(self, name, *, other=None, funcs=None, ranges=None):
         self.name = name
         self.t = sp.symbols('t')
 
         self.funcs = [] if (funcs is None) else [sp.parse_expr(func) for func in funcs]
 
         self.variables = 3
+
         self.value_ranges = [Ticks(0, 1, 0.25, 0.05) for _ in range(self.variables)]
+        if not (ranges is None):
+            for ind, val_range in enumerate(ranges):
+                self.value_ranges[ind].min = val_range[0]
+                self.value_ranges[ind].max = val_range[1]
 
         self.base_matrix = sp.Matrix([
             [0, 0, 1],
@@ -276,14 +281,9 @@ class Parallel(Nomograph):
     def __init__(self, name, *, other=None, funcs=None, ranges=None):
         if funcs is None:
             funcs = ["t"]*3
-        super().__init__(name=name, funcs=funcs)
+        super().__init__(name=name, funcs=funcs, ranges=ranges)
 
-        if other is None:
-            for ind, val_range in enumerate(ranges):
-                self.value_ranges[ind].min = val_range[0]
-                self.value_ranges[ind].max = val_range[1]
-
-        else:
+        if not(other is None):
             self.copy(other)
 
         self.base_matrix = sp.Matrix([
@@ -307,19 +307,12 @@ class Parallel(Nomograph):
 
 
 class Z_Chart(Nomograph):
-    index_of_func = [(0, 1), (1, 0), (2, 1)]
-
     def __init__(self, name, *, other=None, funcs=None, ranges=None):
         if funcs is None:
             funcs = ["t"]*3
-        super().__init__(name=name, funcs=funcs)
+        super().__init__(name=name, funcs=funcs, ranges=ranges)
 
-        if other is None:
-            for ind, val_range in enumerate(ranges):
-                self.value_ranges[ind].min = val_range[0]
-                self.value_ranges[ind].max = val_range[1]
-
-        else:
+        if not(other is None):
             self.copy(other)
 
         self.base_matrix = sp.Matrix([
@@ -333,11 +326,42 @@ class Z_Chart(Nomograph):
     def update_formula(self, index, func):
         super().update_formula(index, func)
 
-        if index != 1:
-            self.base_matrix[Parallel.index_of_func[index]] = self.funcs[index]
+        if index == 0:
+            self.base_matrix[0, 1] = self.funcs[index]
+        elif index == 1:
+            self.base_matrix[1, 0] = self.funcs[index] / (1+self.funcs[index])
+        elif index == 2:
+            self.base_matrix[2, 1] = -1*self.funcs[index]
 
-        else:
-            self.base_matrix[Parallel.index_of_func[index]] = self.funcs[index] / (1+self.funcs[index])
+        self.transform()
+
+class Concurrent(Nomograph):
+    def __init__(self, name, *, other=None, funcs=None, ranges=None):
+        if funcs is None:
+            funcs = ["t"]*3
+        super().__init__(name=name, funcs=funcs, ranges=ranges)
+
+        if not(other is None):
+            self.copy(other)
+
+        self.base_matrix = sp.Matrix([
+            [self.funcs[0], 0, 1],
+            [self.funcs[1], self.funcs[1], 1],
+            [0, self.funcs[2], 1]
+        ])
+
+        self.transform()
+
+    def update_formula(self, index, func):
+        super().update_formula(index, func)
+
+        if index == 0:
+            self.base_matrix[0, 0] = self.funcs[index]
+        elif index == 1:
+            self.base_matrix[1, 0] = self.funcs[index]
+            self.base_matrix[1, 1] = self.funcs[index]
+        elif index == 2:
+            self.base_matrix[2, 1] = self.funcs[index]
 
         self.transform()
 
