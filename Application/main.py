@@ -25,6 +25,7 @@ class MainApp(tk.Tk):
         self.selected_name = tk.StringVar()
         self.selected_name.set(self.types[0]["name"])
         self.last_selected_name = ""
+        self.status_var = tk.StringVar()
 
         # Build UI
         self.entries = []
@@ -82,7 +83,8 @@ class MainApp(tk.Tk):
             justify="left",
             anchor="nw"
         )
-        self.description_label.pack(side="left", padx=10, fill="x", expand=True)
+        self.description_label.pack(
+            side="left", padx=10, fill="x", expand=True)
 
         # Frame for dynamic entries
         self.entries_frame = ttk.Frame(self.main_frame)
@@ -97,6 +99,10 @@ class MainApp(tk.Tk):
             highlightbackground="#999"
         )
         self.canvas.pack(fill="both", expand=True)
+        self.status_var.set("")
+        self.status_message = ttk.Label(self.main_frame, textvariable=self.status_var,
+                                        justify=tk.LEFT, anchor='w')
+        self.status_message.pack(fill="both", padx=10)
 
         # Optional: show canvas size for demo
         self.canvas.bind("<Configure>", self.on_canvas_resize)
@@ -134,7 +140,6 @@ class MainApp(tk.Tk):
         self.update_idletasks()
         self.geometry("")
 
-
     def validate_numeric(self, value_if_allowed):
         """
         Allow only empty input or numeric values.
@@ -142,11 +147,10 @@ class MainApp(tk.Tk):
         if value_if_allowed == "" or value_if_allowed == "-":
             return True
         try:
-            temp = float(value_if_allowed)
+            _ = float(value_if_allowed)
             return True
         except ValueError:
             return False
-
 
     def build_entries(self, count):
         # Clear old entries
@@ -173,7 +177,7 @@ class MainApp(tk.Tk):
             main_entry.bind("<Return>", self.update_formulas)
             main_entry.bind("<FocusOut>", self.update_formulas)
 
-             # Min entry (numeric only)
+            # Min entry (numeric only)
             ttk.Label(row, text="Min").pack(side="left", padx=(0, 2))
             min_entry = ttk.Entry(
                 row,
@@ -250,6 +254,7 @@ class MainApp(tk.Tk):
         self.canvas_width = event.width
         self.canvas_height = event.height
 
+        self.status_var.set(f"Canvas size: {event.width} x {event.height}")
         # # Example drawing: centered text showing canvas size
         # self.canvas.delete("all")
         # text = f"Canvas size: {event.width} x {event.height}"
@@ -285,7 +290,7 @@ class MainApp(tk.Tk):
         scale = 1.1 if event.delta > 0 else 0.9
 
         shift_pressed = event.state & 0x0001
-        ctrl_pressed  = event.state & 0x0004
+        ctrl_pressed = event.state & 0x0004
 
         if shift_pressed and not ctrl_pressed:
             sx = 1.0
