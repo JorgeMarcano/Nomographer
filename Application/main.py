@@ -203,35 +203,65 @@ class MainApp(tk.Tk):
             max_entry.bind("<Return>", self.update_ranges)
             max_entry.bind("<FocusOut>", self.update_ranges)
 
+            # Major Ticks entry (numeric only)
+            ttk.Label(row, text="Maj").pack(side="left", padx=(0, 2))
+            maj_entry = ttk.Entry(
+                row,
+                width=6,
+                validate="key",
+                validatecommand=vcmd
+            )
+            maj_entry.insert(0, "0.25")
+            maj_entry.pack(side="left")
+            maj_entry.bind("<Return>", self.update_ranges)
+            maj_entry.bind("<FocusOut>", self.update_ranges)
+
+            # Minor Ticks entry (numeric only)
+            ttk.Label(row, text="Minor").pack(side="left", padx=(0, 2))
+            minor_entry = ttk.Entry(
+                row,
+                width=6,
+                validate="key",
+                validatecommand=vcmd
+            )
+            minor_entry.insert(0, "0.05")
+            minor_entry.pack(side="left")
+            minor_entry.bind("<Return>", self.update_ranges)
+            minor_entry.bind("<FocusOut>", self.update_ranges)
+
             self.entries.append({
                 "main": main_entry,
                 "min": min_entry,
-                "max": max_entry
+                "max": max_entry,
+                "maj": maj_entry,
+                "minor": minor_entry
             })
 
     def update_ranges(self, event):
         # Updates a range, then updates the canvas
         widget = event.widget
 
+        new_val = widget.get()
+        if new_val == "" or new_val == "-":
+            widget.delete(0, tk.END)
+            widget.insert(0, "0.0")
+            new_val = 0
+        else:
+            new_val = float(new_val)
+
         for row, entry_group in enumerate(self.entries):
             if widget in entry_group.values():
-                new_min = entry_group["min"].get()
-                if new_min == "" or new_min == "-":
-                    entry_group["min"].delete(0, tk.END)
-                    entry_group["min"].insert(0, "0.0")
-                    new_min = 0
-                else:
-                    new_min = float(new_min)
+                if widget is entry_group["min"]:
+                    new_val = self.nomograph.get_tick(row).set_min(new_val)
+                elif widget is entry_group["max"]:
+                    new_val = self.nomograph.get_tick(row).set_max(new_val)
+                elif widget is entry_group["maj"]:
+                    new_val = self.nomograph.get_tick(row).set_major_tick(new_val)
+                elif widget is entry_group["minor"]:
+                    new_val = self.nomograph.get_tick(row).set_minor_tick(new_val)
 
-                new_max = entry_group["max"].get()
-                if new_max == "" or new_max == "-":
-                    entry_group["max"].delete(0, tk.END)
-                    entry_group["max"].insert(0, "0.0")
-                    new_max = 0
-                else:
-                    new_max = float(new_max)
-
-                self.nomograph.update_range(row, (new_min, new_max))
+        widget.delete(0, tk.END)
+        widget.insert(0, f"{new_val}")
 
         self.update_canvas()
 

@@ -9,7 +9,7 @@ class Nomograph():
         self.t = sp.symbols('t')
 
         self.variables = variables
-        self.value_ranges = [(0, 1) for _ in range(variables)]
+        self.value_ranges = [Ticks(0, 1, 0.25, 0.05) for _ in range(variables)]
 
         self.base_matrix = sp.Matrix([
             [0, 0, 1],
@@ -27,10 +27,12 @@ class Nomograph():
 
         self.current_matrix = self.base_matrix
 
-    # Updates the range of one of the variables
-    def update_range(self, index, new_range):
-        if index < self.variables:
-            self.value_ranges[index] = new_range
+    # Gets the ranges of the desired variables
+    def get_tick(self, index):
+        if index >= self.variables:
+            return None
+
+        return self.value_ranges[index]
 
     # Scales the axes
     def scale(self, x, y):
@@ -162,55 +164,32 @@ class Nomograph():
         # canvas.create_line(CENTER_X, 0, CENTER_X, height, fill="gray")
 
         for var in variables_to_draw:
-            x_func = sp.lambdify(self.t, self.current_matrix[var, 0], "numpy")
-            y_func = sp.lambdify(self.t, self.current_matrix[var, 1], "numpy")
+            x_func = np.vectorize(sp.lambdify(self.t, self.current_matrix[var, 0], "numpy"))
+            y_func = np.vectorize(sp.lambdify(self.t, self.current_matrix[var, 1], "numpy"))
 
             # -----------------------------
             # Parameter range
             # -----------------------------
-            t_min = self.value_ranges[var][0]
-            t_max = self.value_ranges[var][1]
+            t_min = self.value_ranges[var].min
+            t_max = self.value_ranges[var].max
             num_points = 1000
             ts = np.linspace(t_min, t_max, num_points)
 
             # -----------------------------
             # Draw curve
             # -----------------------------
-            points = []
+            points = np.column_stack((x_func(ts), y_func(ts)))
 
-            for ti in ts:
-                x = x_func(ti)
-                y = y_func(ti)
-
-                # cx = CENTER_X + x * SCALE
-                # cy = CENTER_Y - y * SCALE
-                # cx = x * SCALE
-                # cy = y * SCALE
-
-                # points.extend([x, y])
-                points.extend([x, y])
-
-            canvas.create_line(points, fill="blue", width=2, smooth=True)
+            canvas.create_line(points.tolist(), fill="blue", width=2, smooth=True)
 
             # -----------------------------
             # Draw graduations of t
             # -----------------------------
-            graduation_step = 250      # every N points
             marker_radius = 3
 
-            marker_set = set(range(0, num_points, graduation_step))
-            # Add last point to ensure label is placed for it too
-            marker_set.add(num_points - 1)
-            for i in marker_set:
-                ti = ts[i]
-                x = x_func(ti)
-                y = y_func(ti)
-
-                # cx = CENTER_X + x * SCALE
-                # cy = CENTER_Y - y * SCALE
-                # cx = x * SCALE
-                # cy = y * SCALE
-
+            major_ticks, minor_ticks = self.value_ranges[var].get_ticks()
+            points = np.column_stack((major_ticks, x_func(major_ticks), y_func(major_ticks)))
+            for ti, x, y in points:
                 # Marker
                 canvas.create_oval(
                     x - marker_radius, y - marker_radius,
@@ -226,6 +205,18 @@ class Nomograph():
                     fill="black"
                 )
 
+            marker_radius = 2
+
+            minor_ticks = self.value_ranges[var].get_min_ticks()
+            points = np.column_stack((minor_ticks, x_func(minor_ticks), y_func(minor_ticks)))
+            for ti, x, y in points:
+                # Marker
+                canvas.create_oval(
+                    x - marker_radius, y - marker_radius,
+                    x + marker_radius, y + marker_radius,
+                    fill="green", outline=""
+                )
+
     def update_formula(self, index, func):
         pass
 
@@ -235,7 +226,8 @@ class Parallel(Nomograph):
         super().__init__()
 
         for ind, val_range in enumerate(ranges):
-            self.update_range(ind, val_range)
+            self.value_ranges[ind].min = val_range[0]
+            self.value_ranges[ind].max = val_range[1]
 
         self.base_matrix = sp.Matrix([
             [sp.parse_expr(funcs[0]), 0, 1],
@@ -251,3 +243,86 @@ class Parallel(Nomograph):
         self.base_matrix[self.index_of_func[index]] = func
 
         self.transform()
+
+
+class Ticks():
+    def __init__(self, minimum, maximum, maj_tick, min_tick, is_log=False):
+        self.min = minimum
+        self.max = maximum
+        self.maj_tick = maj_tick
+        self.min_tick = min_tick
+        self.is_log = is_log
+
+    def get_maj_ticks(self):
+        if not self.is_log and self.maj_tick <= 0:
+            return np.array([])
+        elif self.is_log and self.maj_tick <= 1:
+                return np.array([])
+
+        temp = self.min
+
+        ticks = []
+        while temp < self.max:
+            ticks.append(temp)
+
+            if not self.is_log:
+                temp += self.maj_tick
+            else:
+                temp *= self.maj_tick
+
+        ticks.append(self.max)
+
+        return np.array(ticks)
+
+    def get_min_ticks(self, major_ticks=None):
+        if not self.is_log and self.min_tick <= 0:
+            return np.array([])
+        elif self.is_log and self.min_tick <= 1:
+                return np.array([])
+
+        if major_ticks is None:
+            major_ticks = []
+
+        temp = self.min
+
+        ticks = []
+        while temp < self.max:
+            if temp not in major_ticks:
+                ticks.append(temp)
+
+            if not self.is_log:
+                temp += self.min_tick
+            else:
+                temp *= self.min_tick
+
+        ticks.append(self.max)
+
+        return np.array(ticks)
+
+    def get_ticks(self):
+        major_ticks = self.get_maj_ticks()
+        minor_ticks = self.get_min_ticks(major_ticks)
+
+        return major_ticks, minor_ticks
+
+    def set_max(self, new_max):
+        self.max = max(self.min, new_max)
+        return self.max
+
+    def set_min(self, new_min):
+        self.min = min(self.max, new_min)
+        return self.min
+
+    def set_major_tick(self, new_val):
+        if not self.is_log:
+            self.maj_tick = max(new_val, 0)
+        else:
+            self.maj_tick = max(new_val, 1)
+        return self.maj_tick
+
+    def set_minor_tick(self, new_val):
+        if not self.is_log:
+            self.min_tick = max(new_val, 0)
+        else:
+            self.min_tick = max(new_val, 1)
+        return self.min_tick
