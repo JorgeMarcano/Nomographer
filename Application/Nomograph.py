@@ -7,6 +7,7 @@ import sympy as sp
 class Nomograph():
     def __init__(self, variables=3):
         self.t = sp.symbols('t')
+        self.s = sp.symbols('s')
 
         self.variables = variables
         self.value_ranges = [Ticks(0, 1, 0.25, 0.05) for _ in range(variables)]
@@ -106,6 +107,18 @@ class Nomograph():
         # self.transformations.append(F)
         self.current_transformation = F
 
+    def project(self, xp, yp, zp):
+        P = sp.Matrix([
+            [zp,  yp,   1],
+            [0,   -xp,  0],
+            [0,   0,    -xp]
+        ])
+
+        # self.current_matrix = self.current_matrix * F
+        # self.transformations.append(F)
+        self.current_transformation = P
+
+
     def execute_last_transform(self):
         if self.current_transformation is None:
             return
@@ -122,7 +135,13 @@ class Nomograph():
 
     # Reduced the matrix to a nomographic form TODO
     def reduce(self):
-        pass
+        #easiest way to reduce is simply divide each row by the last column's value
+        is_ok = True
+        for row in range(self.variables):
+            temp_val = self.current_matrix[row, 2]
+            if temp_val != 1:
+                self.current_matrix[row, 0] /= temp_val
+                self.current_matrix[row, 1] /= temp_val
 
     # Performs the transformations in the queue
     def transform(self):
@@ -134,6 +153,8 @@ class Nomograph():
 
         if self.current_transformation is not None:
             self.current_matrix = self.current_matrix * self.current_transformation
+
+        self.reduce()
 
     def reset_transform(self):
         self.transformation_matrix = sp.Matrix([
@@ -148,24 +169,19 @@ class Nomograph():
         self.transform()
 
     # Draw the nomograph on a screen TODO
-    def draw(self, canvas, width, height, variables=None):
+    def draw(self, draw_line_func, gui_draw_text, tick_size, width, height, variables=None):
         # if None, then draw all variables, otherwise just the indexes sent
         if variables is None:
             variables_to_draw = [i for i in range(self.variables)]
         else:
             variables_to_draw = variables[:]
 
-        # CENTER_X = width // 2
-        # CENTER_Y = height // 2
-        # SCALE = 100
-
-        # Axes
-        # canvas.create_line(0, CENTER_Y, width, CENTER_Y, fill="gray")
-        # canvas.create_line(CENTER_X, 0, CENTER_X, height, fill="gray")
-
         for var in variables_to_draw:
             x_func = np.vectorize(sp.lambdify(self.t, self.current_matrix[var, 0], "numpy"))
             y_func = np.vectorize(sp.lambdify(self.t, self.current_matrix[var, 1], "numpy"))
+
+            dxdt = np.vectorize(sp.lambdify(self.t, sp.diff(self.current_matrix[var, 0], self.t), "numpy"))
+            dydt = np.vectorize(sp.lambdify(self.t, sp.diff(self.current_matrix[var, 1], self.t), "numpy"))
 
             # -----------------------------
             # Parameter range
@@ -180,42 +196,48 @@ class Nomograph():
             # -----------------------------
             points = np.column_stack((x_func(ts), y_func(ts)))
 
-            canvas.create_line(points.tolist(), fill="blue", width=2, smooth=True)
+            draw_line_func(points.tolist())
 
             # -----------------------------
             # Draw graduations of t
             # -----------------------------
-            marker_radius = 3
-
             major_ticks, minor_ticks = self.value_ranges[var].get_ticks()
-            points = np.column_stack((major_ticks, x_func(major_ticks), y_func(major_ticks)))
-            for ti, x, y in points:
-                # Marker
-                canvas.create_oval(
-                    x - marker_radius, y - marker_radius,
-                    x + marker_radius, y + marker_radius,
-                    fill="red", outline=""
-                )
+            px = x_func(major_ticks)
+            py = y_func(major_ticks)
+
+            angle = np.arctan2(-dxdt(major_ticks), dydt(major_ticks))
+            mx = np.cos(angle)
+            my = np.sin(angle)
+            points = np.column_stack((major_ticks, px, py, mx, my))
+
+            for ti, px, py, mx, my in points:
+                p1x = px + 2*tick_size*mx
+                p1y = py + 2*tick_size*my
+                p2x = px - 2*tick_size*mx
+                p2y = py - 2*tick_size*my
+
+                draw_line_func([[p1x, p1y], [p2x, p2y]])
+
+                p1x = px + 4*tick_size*mx
+                p1y = py + 4*tick_size*my
 
                 # Label (parameter value)
-                canvas.create_text(
-                    x + 10, y - 10,
-                    text=f"{ti:.2f}",
-                    font=("Arial", 8),
-                    fill="black"
-                )
+                gui_draw_text(p1x, p1y, f"{ti:.2f}")
 
-            marker_radius = 2
+            px = x_func(minor_ticks)
+            py = y_func(minor_ticks)
 
-            minor_ticks = self.value_ranges[var].get_min_ticks()
-            points = np.column_stack((minor_ticks, x_func(minor_ticks), y_func(minor_ticks)))
-            for ti, x, y in points:
-                # Marker
-                canvas.create_oval(
-                    x - marker_radius, y - marker_radius,
-                    x + marker_radius, y + marker_radius,
-                    fill="green", outline=""
-                )
+            angle = np.arctan2(-dxdt(minor_ticks), dydt(minor_ticks))
+            mx = np.cos(angle)
+            my = np.sin(angle)
+            p1x = px + tick_size*mx
+            p1y = py + tick_size*my
+            p2x = px - tick_size*mx
+            p2y = py - tick_size*my
+            points = np.column_stack((minor_ticks, p1x, p1y, p2x, p2y, px, py))
+
+            for ti, p1x, p1y, p2x, p2y, px, py in points:
+                draw_line_func([[p1x, p1y], [p2x, p2y]])
 
     def update_formula(self, index, func):
         pass

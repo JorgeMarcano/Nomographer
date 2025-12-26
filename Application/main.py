@@ -277,7 +277,7 @@ class MainApp(tk.Tk):
 
     def update_canvas(self):
         self.canvas.delete("all")
-        self.nomograph.draw(self.canvas, self.canvas_width, self.canvas_height)
+        self.nomograph.draw(self.gui_draw_line, self.gui_draw_text, 5, self.canvas_width, self.canvas_height)
 
      # ---------- Canvas ----------
     def on_canvas_resize(self, event):
@@ -296,6 +296,18 @@ class MainApp(tk.Tk):
         # )
 
         self.update_canvas()
+
+    def gui_draw_line(self, points):
+        # Blue for line, red for big tick, green for small tick
+        self.canvas.create_line(points, fill="black", width=1, smooth=True)
+
+    def gui_draw_text(self, px, py, text):
+        self.canvas.create_text(
+            px, py,
+            text=text,
+            font=("Arial", 8),
+            fill="black"
+        )
 
     def on_mouse_press(self, event):
         self.last_mouse_pos = (event.x, event.y)
