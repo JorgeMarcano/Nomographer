@@ -5,12 +5,13 @@ import sympy as sp
 
 # The nomograph is set up as a list of x, y pairs of 3 curves
 class Nomograph():
-    def __init__(self, variables=3):
+    def __init__(self, *, other=None, funcs=None):
         self.t = sp.symbols('t')
-        self.s = sp.symbols('s')
 
-        self.variables = variables
-        self.value_ranges = [Ticks(0, 1, 0.25, 0.05) for _ in range(variables)]
+        self.funcs = [] if (funcs is None) else [sp.parse_expr(func) for func in funcs]
+
+        self.variables = 3
+        self.value_ranges = [Ticks(0, 1, 0.25, 0.05) for _ in range(self.variables)]
 
         self.base_matrix = sp.Matrix([
             [0, 0, 1],
@@ -27,6 +28,11 @@ class Nomograph():
         self.current_transformation = None
 
         self.current_matrix = self.base_matrix
+
+        if not (other is None):
+            self.copy(other)
+
+        self.transform()
 
     # Gets the ranges of the desired variables
     def get_tick(self, index):
@@ -163,6 +169,14 @@ class Nomograph():
             [0, 0, 1]
         ])
 
+    def get_transform(self):
+        self.execute_last_transform()
+        return self.current_transformation
+
+    def set_transform(self, transformation):
+        self.current_transformation = transformation
+        self.transform()
+
     # Sets the base matrix and recomputes the transformations
     def set_base_matrix(self, base):
         self.base_matrix = base
@@ -240,29 +254,90 @@ class Nomograph():
                 draw_line_func([[p1x, p1y], [p2x, p2y]])
 
     def update_formula(self, index, func):
-        pass
+        if isinstance(func, str):
+            self.funcs[index] = sp.parse_expr(func)
+        elif isinstance(func, sp.Symbol):
+            self.funcs[index] = func
+
+    def copy(self, other):
+        self.value_ranges = other.value_ranges[:]
+        self.current_transformation = other.current_transformation
+        self.transformation_matrix = other.transformation_matrix
+
+        self.base_matrix = other.base_matrix
+
+        for ind, func in enumerate(other.funcs):
+            self.update_formula(ind, func)
 
 
 class Parallel(Nomograph):
-    def __init__(self, funcs, ranges):
-        super().__init__()
+    index_of_func = [(0, 0), (1, 0), (2, 0)]
 
-        for ind, val_range in enumerate(ranges):
-            self.value_ranges[ind].min = val_range[0]
-            self.value_ranges[ind].max = val_range[1]
+    def __init__(self, *, other=None, funcs=None, ranges=None):
+        if funcs is None:
+            funcs = ["t"]*3
+        super().__init__(funcs=funcs)
+
+        if other is None:
+            for ind, val_range in enumerate(ranges):
+                self.value_ranges[ind].min = val_range[0]
+                self.value_ranges[ind].max = val_range[1]
+
+        else:
+            self.copy(other)
 
         self.base_matrix = sp.Matrix([
-            [sp.parse_expr(funcs[0]), 0, 1],
-            [sp.parse_expr(funcs[1]), 1, 1],
-            [0.5*sp.parse_expr(funcs[2]), 0.5, 1]
+            [self.funcs[0], 0, 1],
+            [self.funcs[1], 1, 1],
+            [0.5*self.funcs[2], 0.5, 1]
         ])
-
-        self.index_of_func = [(0, 0), (1, 0), (2, 0)]
 
         self.transform()
 
     def update_formula(self, index, func):
-        self.base_matrix[self.index_of_func[index]] = func
+        super().update_formula(index, func)
+
+        if index !=2:
+            self.base_matrix[Parallel.index_of_func[index]] = self.funcs[index]
+
+        else:
+            self.base_matrix[Parallel.index_of_func[index]] = 0.5*self.funcs[index]
+
+        self.transform()
+
+
+class Z_Chart(Nomograph):
+    index_of_func = [(0, 1), (1, 0), (2, 1)]
+
+    def __init__(self, *, other=None, funcs=None, ranges=None):
+        if funcs is None:
+            funcs = ["t"]*3
+        super().__init__(funcs=funcs)
+
+        if other is None:
+            for ind, val_range in enumerate(ranges):
+                self.value_ranges[ind].min = val_range[0]
+                self.value_ranges[ind].max = val_range[1]
+
+        else:
+            self.copy(other)
+
+        self.base_matrix = sp.Matrix([
+            [0, self.funcs[0], 1],
+            [self.funcs[1] / (1+self.funcs[1]), 0, 1],
+            [1, -self.funcs[2], 1]
+        ])
+
+        self.transform()
+
+    def update_formula(self, index, func):
+        super().update_formula(index, func)
+
+        if index !=1:
+            self.base_matrix[Parallel.index_of_func[index]] = self.funcs[index]
+
+        else:
+            self.base_matrix[Parallel.index_of_func[index]] = self.funcs[index] / (1+self.funcs[index])
 
         self.transform()
 

@@ -11,11 +11,11 @@ class MainApp(tk.Tk):
 
         self.title("Nomograph Builder")
 
-        self.nomograph = Nomograph.Parallel(["t"] * 3, [(0, 1)] * 3)
+        self.nomograph = Nomograph.Parallel(funcs=["t"] * 3, ranges=[(0, 1)] * 3)
         self.nomograph.scale(100, 100)
         self.nomograph.execute_last_transform()
 
-        # self.create_menu()
+        self.create_menu()
 
         # Load data
         self.types = self.load_json("Types.json")
@@ -73,7 +73,6 @@ class MainApp(tk.Tk):
             *self.type_lookup.keys()
         )
         self.dropdown.pack(side="left", padx=10)
-        self.dropdown.config(state="disabled")
 
         # Description label
         self.description_label = tk.Label(
@@ -99,10 +98,9 @@ class MainApp(tk.Tk):
             highlightbackground="#999"
         )
         self.canvas.pack(fill="both", expand=True)
-        self.status_var.set("")
-        self.status_message = ttk.Label(self.main_frame, textvariable=self.status_var,
-                                        justify=tk.LEFT, anchor='w')
-        self.status_message.pack(fill="both", padx=10)
+
+        self.canvas_width = self.canvas.winfo_width()
+        self.canvas_height = self.canvas.winfo_height()
 
         # Optional: show canvas size for demo
         self.canvas.bind("<Configure>", self.on_canvas_resize)
@@ -110,6 +108,12 @@ class MainApp(tk.Tk):
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_press)
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
+
+        # Display status bar
+        self.status_var.set("")
+        self.status_message = ttk.Label(self.main_frame, textvariable=self.status_var,
+                                        justify=tk.LEFT, anchor='w')
+        self.status_message.pack(fill="both", padx=10)
 
         # Generate the default selection
         self.on_select()
@@ -127,14 +131,18 @@ class MainApp(tk.Tk):
         self.last_selected_name = name
 
         item = self.type_lookup[name]
-
         # Update description
         self.description_label.config(text=item["description"])
-
         # Rebuild entries
         self.build_entries(item["variables"])
 
         # Get a new nomograph
+        if name == "Parallel":
+            self.nomograph = Nomograph.Parallel(other=self.nomograph)
+        elif name == "N or Z":
+            self.nomograph = Nomograph.Z_Chart(other=self.nomograph)
+
+        self.update_canvas()
 
         # Auto-resize window
         self.update_idletasks()
@@ -153,6 +161,10 @@ class MainApp(tk.Tk):
             return False
 
     def build_entries(self, count):
+        old_entries = [entry["main"].get() for entry in self.entries]
+        if len(self.entries) == 0:
+            old_entries = ["t"] * count
+
         # Clear old entries
         for widget in self.entries_frame.winfo_children():
             widget.destroy()
@@ -172,7 +184,7 @@ class MainApp(tk.Tk):
             # Main entry (unchanged)
             ttk.Label(row, text=f"F{i + 1}(t)=").pack(side="left", padx=(0, 5))
             main_entry = ttk.Entry(row, width=30)
-            main_entry.insert(0, "t")
+            main_entry.insert(0, old_entries[i])
             main_entry.pack(side="left", padx=(0, 10))
             main_entry.bind("<Return>", self.update_formulas)
             main_entry.bind("<FocusOut>", self.update_formulas)
@@ -264,6 +276,11 @@ class MainApp(tk.Tk):
         widget.insert(0, f"{new_val}")
 
         self.update_canvas()
+
+    def get_funcs(self):
+        funcs = [entry["main"].get() for entry in self.entries]
+
+        return funcs
 
     def update_formulas(self, event):
         # Updates a range, then updates the canvas
