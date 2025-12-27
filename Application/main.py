@@ -189,7 +189,7 @@ class MainApp(tk.Tk):
     def build_entries(self, functions):
         count = len(functions)
 
-        old_entries = [entry["main"].get() for entry in self.entries]
+        old_entries = [entry.get() for entry in self.entries]
         if len(old_entries) < count:
             old_entries += ["t"] * (count - len(old_entries))
 
@@ -198,6 +198,7 @@ class MainApp(tk.Tk):
             widget.destroy()
         for widget in self.ranges_frame.winfo_children():
             widget.destroy()
+            
         self.entries.clear()
         self.ranges.clear()
 
@@ -223,9 +224,10 @@ class MainApp(tk.Tk):
 
         range_name_arr = ["Min", "Max", "Maj", "Minor"]
         range_defaults = ["0.0", "1.0", "0.25", "0.05"]
-        for ind in range(max(functions)+1):
+        for var in range(max(functions)+1):
             row = ttk.Frame(self.ranges_frame)
             row.pack(anchor="w", pady=2)
+            ttk.Label(row, text=f"u{var} =").pack(side="left", padx=(0, 5))
 
             temp_entries = []
             for ind, range_name in enumerate(range_name_arr):
