@@ -1,6 +1,7 @@
 import json
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 
 import Nomograph
 
@@ -11,7 +12,7 @@ class MainApp(tk.Tk):
 
         self.title("Nomograph Builder")
 
-        self.nomograph = Nomograph.Parallel(name="parallel", funcs=["t"] * 3, ranges=[(0, 1)] * 3)
+        self.nomograph = Nomograph.Parallel(name="parallel", func_vars=[0, 1, 2], funcs=["t"] * 3, ranges=[(0, 1)] * 3)
         self.selected_tag = None
         self.nomograph.scale(100, 100)
         self.nomograph.execute_last_transform()
@@ -30,7 +31,9 @@ class MainApp(tk.Tk):
 
         # Build UI
         self.entries = []
+        self.ranges = []
         self.create_widgets()
+        self.create_canvas()
 
         # Trace selection changes
         self.selected_name.trace_add("write", self.on_select)
@@ -60,10 +63,19 @@ class MainApp(tk.Tk):
 
     # ---------- Create Window Elements ----------
     def create_widgets(self):
-        self.main_frame = ttk.Frame(self, padding=10)
-        self.main_frame.pack(fill="both", expand=True)
+        self.child = tk.Toplevel(self)
+        self.child.title("Functions Window")
+        self.child.resizable(False, False)  # ← prevents resizing
+        self.child.protocol(
+            "WM_DELETE_WINDOW",
+            lambda: messagebox.showwarning(
+                "Error",
+                "Cannot close this window",
+                parent=self.child
+            )
+        )
 
-        top_frame = ttk.Frame(self.main_frame)
+        top_frame = ttk.Frame(self.child)
         top_frame.pack(fill="x", padx=10, pady=10)
 
         # Dropdown
@@ -87,8 +99,18 @@ class MainApp(tk.Tk):
             side="left", padx=10, fill="x", expand=True)
 
         # Frame for dynamic entries
-        self.entries_frame = ttk.Frame(self.main_frame)
-        self.entries_frame.pack(fill="both", padx=10, pady=10)
+        self.input_frame = ttk.Frame(self.child)
+        self.input_frame.pack(fill="both", padx=10, pady=10)
+
+        self.entries_frame = ttk.Frame(self.input_frame)
+        self.entries_frame.pack(side="left", padx=10, pady=10)
+
+        self.ranges_frame = ttk.Frame(self.input_frame)
+        self.ranges_frame.pack(side="left", fill="both", padx=10, pady=10)
+
+    def create_canvas(self):
+        self.main_frame = ttk.Frame(self, padding=10)
+        self.main_frame.pack(fill="both", expand=True)
 
         # Canvas for the nomograph
         # Canvas (fills remaining space)
@@ -135,21 +157,21 @@ class MainApp(tk.Tk):
         # Update description
         self.description_label.config(text=item["description"])
         # Rebuild entries
-        self.build_entries(item["variables"])
+        self.build_entries(item["functions"])
 
         # Get a new nomograph
         if name == "Parallel":
-            self.nomograph = Nomograph.Parallel(name="parallel", other=self.nomograph)
+            self.nomograph = Nomograph.Parallel(name="parallel", func_vars=item["functions"], other=self.nomograph)
         elif name == "N or Z":
-            self.nomograph = Nomograph.Z_Chart(name="z_chart", other=self.nomograph)
+            self.nomograph = Nomograph.Z_Chart(name="z_chart", func_vars=item["functions"], other=self.nomograph)
         elif name == "Concurrent":
-            self.nomograph = Nomograph.Concurrent(name="concurrent", other=self.nomograph)
+            self.nomograph = Nomograph.Concurrent(name="concurrent", func_vars=item["functions"], other=self.nomograph)
 
         self.update_canvas()
 
         # Auto-resize window
         self.update_idletasks()
-        self.geometry("")
+        self.child.geometry("")
 
     def validate_numeric(self, value_if_allowed):
         """
@@ -163,16 +185,20 @@ class MainApp(tk.Tk):
         except ValueError:
             return False
 
-    def build_entries(self, count):
+    def build_entries(self, functions):
+        count = len(functions)
+
         old_entries = [entry["main"].get() for entry in self.entries]
-        if len(self.entries) == 0:
-            old_entries = ["t"] * count
+        if len(old_entries) < count:
+            old_entries += ["t"] * (count - len(old_entries))
 
         # Clear old entries
         for widget in self.entries_frame.winfo_children():
             widget.destroy()
-
+        for widget in self.ranges_frame.winfo_children():
+            widget.destroy()
         self.entries.clear()
+        self.ranges.clear()
 
         # Register validation command once
         vcmd = (self.register(self.validate_numeric), "%P")
@@ -180,76 +206,47 @@ class MainApp(tk.Tk):
         if (count <= 0):
             return
 
-        for i in range(count):
+        for ind, var in enumerate(functions):
             row = ttk.Frame(self.entries_frame)
             row.pack(anchor="w", pady=2)
 
             # Main entry (unchanged)
-            ttk.Label(row, text=f"F{i + 1}(t)=").pack(side="left", padx=(0, 5))
+            ttk.Label(row, text=f"F{ind + 1}(t=u{var})=").pack(side="left", padx=(0, 5))
             main_entry = ttk.Entry(row, width=30)
-            main_entry.insert(0, old_entries[i])
+            main_entry.insert(0, old_entries[ind])
             main_entry.pack(side="left", padx=(0, 10))
             main_entry.bind("<Return>", self.update_formulas)
             main_entry.bind("<FocusOut>", self.update_formulas)
 
-            # Min entry (numeric only)
-            ttk.Label(row, text="Min").pack(side="left", padx=(0, 2))
-            min_entry = ttk.Entry(
-                row,
-                width=6,
-                validate="key",
-                validatecommand=vcmd
-            )
-            min_entry.insert(0, "0.0")
-            min_entry.pack(side="left", padx=(0, 10))
-            min_entry.bind("<Return>", self.update_ranges)
-            min_entry.bind("<FocusOut>", self.update_ranges)
+            self.entries.append(main_entry)
 
-            # Max entry (numeric only)
-            ttk.Label(row, text="Max").pack(side="left", padx=(0, 2))
-            max_entry = ttk.Entry(
-                row,
-                width=6,
-                validate="key",
-                validatecommand=vcmd
-            )
-            max_entry.insert(0, "1.0")
-            max_entry.pack(side="left")
-            max_entry.bind("<Return>", self.update_ranges)
-            max_entry.bind("<FocusOut>", self.update_ranges)
+        range_name_arr = ["Min", "Max", "Maj", "Minor"]
+        range_defaults = ["0.0", "1.0", "0.25", "0.05"]
+        for ind in range(max(functions)+1):
+            row = ttk.Frame(self.ranges_frame)
+            row.pack(anchor="w", pady=2)
 
-            # Major Ticks entry (numeric only)
-            ttk.Label(row, text="Maj").pack(side="left", padx=(0, 2))
-            maj_entry = ttk.Entry(
-                row,
-                width=6,
-                validate="key",
-                validatecommand=vcmd
-            )
-            maj_entry.insert(0, "0.25")
-            maj_entry.pack(side="left")
-            maj_entry.bind("<Return>", self.update_ranges)
-            maj_entry.bind("<FocusOut>", self.update_ranges)
+            temp_entries = []
+            for ind, range_name in enumerate(range_name_arr):
+                ttk.Label(row, text=range_name).pack(side="left", padx=(0, 2))
+                temp_entry = ttk.Entry(
+                    row,
+                    width=6,
+                    validate="key",
+                    validatecommand=vcmd
+                )
+                temp_entry.insert(0, range_defaults[ind])
+                temp_entry.pack(side="left", padx=(0, 10))
+                temp_entry.bind("<Return>", self.update_ranges)
+                temp_entry.bind("<FocusOut>", self.update_ranges)
 
-            # Minor Ticks entry (numeric only)
-            ttk.Label(row, text="Minor").pack(side="left", padx=(0, 2))
-            minor_entry = ttk.Entry(
-                row,
-                width=6,
-                validate="key",
-                validatecommand=vcmd
-            )
-            minor_entry.insert(0, "0.05")
-            minor_entry.pack(side="left")
-            minor_entry.bind("<Return>", self.update_ranges)
-            minor_entry.bind("<FocusOut>", self.update_ranges)
+                temp_entries.append(temp_entry)
 
-            self.entries.append({
-                "main": main_entry,
-                "min": min_entry,
-                "max": max_entry,
-                "maj": maj_entry,
-                "minor": minor_entry
+            self.ranges.append({
+                "min": temp_entries[0],
+                "max": temp_entries[1],
+                "maj": temp_entries[2],
+                "minor": temp_entries[3]
             })
 
     def update_ranges(self, event):
@@ -264,15 +261,15 @@ class MainApp(tk.Tk):
         else:
             new_val = float(new_val)
 
-        for row, entry_group in enumerate(self.entries):
-            if widget in entry_group.values():
-                if widget is entry_group["min"]:
+        for row, range_group in enumerate(self.ranges):
+            if widget in range_group.values():
+                if widget is range_group["min"]:
                     new_val = self.nomograph.get_tick(row).set_min(new_val)
-                elif widget is entry_group["max"]:
+                elif widget is range_group["max"]:
                     new_val = self.nomograph.get_tick(row).set_max(new_val)
-                elif widget is entry_group["maj"]:
+                elif widget is range_group["maj"]:
                     new_val = self.nomograph.get_tick(row).set_major_tick(new_val)
-                elif widget is entry_group["minor"]:
+                elif widget is range_group["minor"]:
                     new_val = self.nomograph.get_tick(row).set_minor_tick(new_val)
 
         widget.delete(0, tk.END)
@@ -290,14 +287,14 @@ class MainApp(tk.Tk):
         widget = event.widget
 
         for row, entry_group in enumerate(self.entries):
-            if widget in entry_group.values():
+            if widget is entry_group:
                 self.nomograph.update_formula(row, widget.get())
 
         self.update_canvas()
 
     def update_canvas(self):
         self.canvas.delete("all")
-        self.nomograph.draw(self.gui_draw_line, self.gui_draw_text, 5, self.canvas_width, self.canvas_height)
+        self.nomograph.draw(self.gui_draw_line, self.gui_draw_text, 5)
 
      # ---------- Canvas ----------
     def on_canvas_resize(self, event):

@@ -5,13 +5,13 @@ import sympy as sp
 
 # The nomograph is set up as a list of x, y pairs of 3 curves
 class Nomograph():
-    def __init__(self, name, *, other=None, funcs=None, ranges=None):
+    def __init__(self, name, func_vars, *, other=None, funcs=None, ranges=None):
         self.name = name
         self.t = sp.symbols('t')
 
-        self.funcs = [] if (funcs is None) else [sp.parse_expr(func) for func in funcs]
+        self.funcs = ["t" for _ in func_vars] if (funcs is None) else [sp.parse_expr(func) for func in funcs]
 
-        self.variables = 3
+        self.variables = max(func_vars) + 1
 
         self.value_ranges = [Ticks(0, 1, 0.25, 0.05) for _ in range(self.variables)]
         if not (ranges is None):
@@ -188,7 +188,7 @@ class Nomograph():
         self.transform()
 
     # Draw the nomograph on a screen TODO
-    def draw(self, draw_line_func, gui_draw_text, tick_size, width, height, variables=None):
+    def draw(self, draw_line_func, gui_draw_text, tick_size, variables=None):
         # if None, then draw all variables, otherwise just the indexes sent
         if variables is None:
             variables_to_draw = [i for i in range(self.variables)]
@@ -278,10 +278,8 @@ class Nomograph():
 class Parallel(Nomograph):
     index_of_func = [(0, 0), (1, 0), (2, 0)]
 
-    def __init__(self, name, *, other=None, funcs=None, ranges=None):
-        if funcs is None:
-            funcs = ["t"]*3
-        super().__init__(name=name, funcs=funcs, ranges=ranges)
+    def __init__(self, name, func_vars, *, other=None, funcs=None, ranges=None):
+        super().__init__(name=name, func_vars=func_vars, funcs=funcs, ranges=ranges)
 
         if not(other is None):
             self.copy(other)
@@ -307,10 +305,8 @@ class Parallel(Nomograph):
 
 
 class Z_Chart(Nomograph):
-    def __init__(self, name, *, other=None, funcs=None, ranges=None):
-        if funcs is None:
-            funcs = ["t"]*3
-        super().__init__(name=name, funcs=funcs, ranges=ranges)
+    def __init__(self, name, func_vars, *, other=None, funcs=None, ranges=None):
+        super().__init__(name=name, func_vars=func_vars, funcs=funcs, ranges=ranges)
 
         if not(other is None):
             self.copy(other)
@@ -336,10 +332,8 @@ class Z_Chart(Nomograph):
         self.transform()
 
 class Concurrent(Nomograph):
-    def __init__(self, name, *, other=None, funcs=None, ranges=None):
-        if funcs is None:
-            funcs = ["t"]*3
-        super().__init__(name=name, funcs=funcs, ranges=ranges)
+    def __init__(self, name, func_vars, *, other=None, funcs=None, ranges=None):
+        super().__init__(name=name, func_vars=func_vars, funcs=funcs, ranges=ranges)
 
         if not(other is None):
             self.copy(other)
