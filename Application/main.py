@@ -425,17 +425,21 @@ class MainApp(tk.Tk):
         tk.Label(self.transform_child, text="Angle (degrees)").pack(pady=5)
 
         self.crosshair_point = (0, 0)
-        self.angle_var = tk.IntVar(value=0)
-        self.angle_var.trace_add("write", self.on_rotate_changed)
-        angle_slider = tk.Scale(
+        self.angle_var = tk.DoubleVar(value=0)
+
+        entry = tk.Entry(self.transform_child, textvariable=self.angle_var, width=6, justify="center")
+        entry.pack()
+
+        angle_slider = ttk.Scale(
             self.transform_child,
             from_=0,
             to=360,
             orient="horizontal",
             variable=self.angle_var,
-            length=260
         )
         angle_slider.pack(fill="x", padx=20)
+
+        self.angle_var.trace_add("write", self.on_rotate_changed)
 
         button_frame = tk.Frame(self.transform_child)
         button_frame.pack(pady=10)
@@ -447,28 +451,29 @@ class MainApp(tk.Tk):
 
     def on_rotate_cancel(self, event=None):
         self.nomograph.cancel_transform()
-
-        if self.transform_child and self.transform_child.winfo_exists():
-            self.transform_child.destroy()
-        self.transform_child = None
-
+        self.on_rotate_close()
         self.update_canvas()
 
     def on_rotate_apply(self, event=None):
         self.nomograph.execute_last_transform()
-
-        if self.transform_child and self.transform_child.winfo_exists():
-            self.transform_child.destroy()
-        self.transform_child = None
-
+        self.on_rotate_close()
         self.update_canvas()
 
     def on_rotate_changed(self, *args):
+        self.angle_var.set(round(self.angle_var.get(), 2))
         px, py = self.crosshair_point
         self.nomograph.rotate_point(px, py, deg=self.angle_var.get())
         self.nomograph.transform()
 
         self.update_canvas()
+
+    def on_rotate_close(self):
+        if self.transform_child and self.transform_child.winfo_exists():
+            self.transform_child.destroy()
+        self.transform_child = None
+
+        self.is_crosshair = False
+        self.canvas.delete("crosshair")
 
     # --------------------
     # ZOOM CALLBACK
