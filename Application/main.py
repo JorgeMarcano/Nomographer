@@ -306,6 +306,7 @@ class MainApp(tk.Tk):
 
     def update_canvas(self):
         self.canvas.delete("all")
+        self.nomograph.transform()
         self.nomograph.draw(self.gui_draw_line, self.gui_draw_text, 5)
 
      # ---------- Canvas ----------
@@ -431,20 +432,22 @@ class MainApp(tk.Tk):
         self.transform_child.protocol("WM_DELETE_WINDOW", self.on_rotate_cancel)
 
     def on_rotate_cancel(self, event=None):
-        self.nomograph.current_transformation = None
+        self.nomograph.cancel_transform()
 
         if self.transform_child and self.transform_child.winfo_exists():
             self.transform_child.destroy()
-
         self.transform_child = None
+
+        self.update_canvas()
 
     def on_rotate_apply(self, event=None):
         self.nomograph.execute_last_transform()
 
         if self.transform_child and self.transform_child.winfo_exists():
             self.transform_child.destroy()
-
         self.transform_child = None
+
+        self.update_canvas()
 
     def on_rotate_changed(self, *args):
         self.nomograph.rotate(deg=self.angle_var.get())

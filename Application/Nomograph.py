@@ -87,7 +87,7 @@ class Nomograph():
     def rotate(self, theta=None, deg=None):
         if not(deg is None):
             theta = deg * sp.pi / 180
-        
+
         R = sp.Matrix([
             [sp.cos(theta), -sp.sin(theta), 0],
             [sp.sin(theta), sp.cos(theta),  0],
@@ -184,6 +184,9 @@ class Nomograph():
     def set_transform(self, transformation):
         self.current_transformation = transformation
         self.transform()
+
+    def cancel_transform(self):
+        self.current_transformation = None
 
     # Sets the base matrix and recomputes the transformations
     def set_base_matrix(self, base):
