@@ -328,14 +328,22 @@ class MainApp(tk.Tk):
 
     def gui_draw_line(self, tag, points):
         # Blue for line, red for big tick, green for small tick
-        self.canvas.create_line(points, fill="black", width=1, smooth=True, tags=tag)
+        if tag == self.selected_tag:
+            color = "blue"
+        else:
+            color = "black"
+        self.canvas.create_line(points, fill=color, width=1, smooth=True, tags=tag)
 
     def gui_draw_text(self, tag, px, py, text):
+        if tag == self.selected_tag:
+            color = "blue"
+        else:
+            color = "black"
         self.canvas.create_text(
             px, py,
             text=text,
             font=("Arial", 8),
-            fill="black",
+            fill=color,
             tags=tag
         )
 
@@ -349,9 +357,18 @@ class MainApp(tk.Tk):
             # Get all tags associated with that specific item ID
             item_id = clicked_item[0]
             tags = self.canvas.gettags(item_id)
-            self.selected_tag = [t for t in tags if t != "current"][0]
-            self.canvas.itemconfigure(self.selected_tag, fill="blue")
+            selected_tag = [t for t in tags if t != "current"][0]
+            if self.selected_tag and selected_tag == self.selected_tag:
+                # Clicked on a selected item, then unselect
+                self.canvas.itemconfigure(self.selected_tag, fill="black")
+                self.selected_tag = None
+            else:
+                # No item selected previously or clicked on different item, then select new one
+                self.canvas.itemconfigure(self.selected_tag, fill="black")
+                self.selected_tag = selected_tag
+                self.canvas.itemconfigure(self.selected_tag, fill="blue")
         else:
+            # Clicked on a empty space, unselect
             item_id = None
             tags = None
             if self.selected_tag:
