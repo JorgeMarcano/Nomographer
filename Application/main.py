@@ -109,6 +109,7 @@ class MainApp(tk.Tk):
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_press)
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
+        self.canvas.bind("<Control-Button-1>", self.on_mouse_ctrl_press)
 
         # Display status bar
         self.status_var.set("")
@@ -333,6 +334,8 @@ class MainApp(tk.Tk):
     def on_mouse_press(self, event):
         self.last_mouse_pos = (event.x, event.y)
         self.nomograph.execute_last_transform()
+
+    def on_mouse_ctrl_press(self, event):
         clicked_item = self.canvas.find_withtag("current")
         if clicked_item:
             # Get all tags associated with that specific item ID
