@@ -84,7 +84,10 @@ class Nomograph():
         self.current_transformation = T
 
     # Rotates around the origin by and angle theta
-    def rotate(self, theta):
+    def rotate(self, theta=None, deg=None):
+        if not(deg is None):
+            theta = deg * sp.pi / 180
+        
         R = sp.Matrix([
             [sp.cos(theta), -sp.sin(theta), 0],
             [sp.sin(theta), sp.cos(theta),  0],

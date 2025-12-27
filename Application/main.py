@@ -29,6 +29,10 @@ class MainApp(tk.Tk):
         self.last_selected_name = ""
         self.status_var = tk.StringVar()
 
+        self.crosshair = {"h": None, "v": None}
+        self.transform_child = None
+        self.is_crosshair = False
+
         # Build UI
         self.entries = []
         self.ranges = []
@@ -133,6 +137,11 @@ class MainApp(tk.Tk):
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
         self.canvas.bind("<Control-Button-1>", self.on_mouse_ctrl_press)
 
+        self.canvas.bind("<Motion>", self.draw_crosshair)
+
+        self.bind("r", self.on_r_pressed)
+        self.bind("R", self.on_r_pressed)
+
         # Display status bar
         self.status_var.set("")
         self.status_message = ttk.Label(self.main_frame, textvariable=self.status_var,
@@ -198,7 +207,7 @@ class MainApp(tk.Tk):
             widget.destroy()
         for widget in self.ranges_frame.winfo_children():
             widget.destroy()
-            
+
         self.entries.clear()
         self.ranges.clear()
 
@@ -356,6 +365,72 @@ class MainApp(tk.Tk):
         px, py = pan_vector
 
         self.nomograph.translate(px, py)
+        self.nomograph.transform()
+
+        self.update_canvas()
+
+    def draw_crosshair(self, event):
+        self.canvas.delete("crosshair")
+
+        if not self.is_crosshair:
+            return
+
+        size = 15
+        x, y = event.x, event.y
+
+        self.canvas.create_line(x - size, y, x + size, y, fill="red", tags="crosshair")
+        self.canvas.create_line(x, y - size, x, y + size, fill="red", tags="crosshair")
+
+    def on_r_pressed(self, event):
+        # Start tracking mouse for crosshair
+        self.is_crosshair = True
+
+        # Prevent opening multiple child windows
+        if self.transform_child and self.transform_child.winfo_exists():
+            return
+
+        self.transform_child = tk.Toplevel(self)
+        self.transform_child.title("Angle Selector")
+        self.transform_child.resizable(False, False)
+
+        tk.Label(self.transform_child, text="Angle (degrees)").pack(pady=5)
+
+        self.angle_var = tk.IntVar(value=0)
+        self.angle_var.trace_add("write", self.on_rotate_changed)
+        angle_slider = tk.Scale(
+            self.transform_child,
+            from_=0,
+            to=360,
+            variable=self.angle_var
+        )
+        angle_slider.pack(fill="x", padx=20)
+
+        button_frame = tk.Frame(self.transform_child)
+        button_frame.pack(pady=10)
+
+        tk.Button(button_frame, text="Apply", command=self.on_rotate_apply).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Cancel", command=self.on_rotate_cancel).pack(side="left", padx=5)
+
+        self.transform_child.protocol("WM_DELETE_WINDOW", self.on_rotate_cancel)
+
+    def on_rotate_cancel(self, event=None):
+        self.nomograph.current_transformation = None
+
+        if self.transform_child and self.transform_child.winfo_exists():
+            self.transform_child.destroy()
+
+        self.transform_child = None
+
+    def on_rotate_apply(self, event=None):
+        self.nomograph.execute_last_transform()
+
+        if self.transform_child and self.transform_child.winfo_exists():
+            self.transform_child.destroy()
+
+        self.transform_child = None
+
+    def on_rotate_changed(self, *args):
+        self.nomograph.rotate(deg=self.angle_var.get())
         self.nomograph.transform()
 
         self.update_canvas()
