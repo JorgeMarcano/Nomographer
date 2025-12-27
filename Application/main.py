@@ -32,6 +32,7 @@ class MainApp(tk.Tk):
         self.crosshair = {"h": None, "v": None}
         self.transform_child = None
         self.is_crosshair = False
+        self.crosshair_point = (0, 0)
 
         # Build UI
         self.entries = []
@@ -132,7 +133,7 @@ class MainApp(tk.Tk):
         # Optional: show canvas size for demo
         self.canvas.bind("<Configure>", self.on_canvas_resize)
         self.canvas.bind("<ButtonPress-1>", self.on_mouse_press)
-        self.canvas.bind("<ButtonRelease-1>", self.on_mouse_press)
+        self.canvas.bind("<ButtonRelease-1>", self.on_mouse_release)
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
         self.canvas.bind("<Control-Button-1>", self.on_mouse_ctrl_press)
@@ -305,7 +306,7 @@ class MainApp(tk.Tk):
         self.update_canvas()
 
     def update_canvas(self):
-        self.canvas.delete("all")
+        self.canvas.delete("nomograph")
         self.nomograph.transform()
         self.nomograph.draw(self.gui_draw_line, self.gui_draw_text, 5)
 
@@ -333,7 +334,7 @@ class MainApp(tk.Tk):
             color = "blue"
         else:
             color = "black"
-        self.canvas.create_line(points, fill=color, width=1, smooth=True, tags=tag)
+        self.canvas.create_line(points, fill=color, width=1, smooth=True, tags=(tag, "nomograph"))
 
     def gui_draw_text(self, tag, px, py, text):
         if tag == self.selected_tag:
@@ -345,12 +346,22 @@ class MainApp(tk.Tk):
             text=text,
             font=("Arial", 8),
             fill=color,
-            tags=tag
+            tags=(tag, "nomograph")
         )
 
     def on_mouse_press(self, event):
         self.last_mouse_pos = (event.x, event.y)
+        # self.nomograph.execute_last_transform()
+
+        if self.is_crosshair:
+            self.crosshair_point = (event.x, event.y)
+            self.is_crosshair = False
+
+        self.update_canvas()
+
+    def on_mouse_release(self, event):
         self.nomograph.execute_last_transform()
+        self.update_canvas()
 
     def on_mouse_ctrl_press(self, event):
         clicked_item = self.canvas.find_withtag("current")
@@ -388,18 +399,18 @@ class MainApp(tk.Tk):
         self.update_canvas()
 
     def draw_crosshair(self, event):
-        self.canvas.delete("crosshair")
+        if self.is_crosshair:
+            self.canvas.delete("crosshair")
 
-        if not self.is_crosshair:
-            return
+            size = 15
+            x, y = event.x, event.y
 
-        size = 15
-        x, y = event.x, event.y
-
-        self.canvas.create_line(x - size, y, x + size, y, fill="red", tags="crosshair")
-        self.canvas.create_line(x, y - size, x, y + size, fill="red", tags="crosshair")
+            self.canvas.create_line(x - size, y, x + size, y, fill="red", tags="crosshair")
+            self.canvas.create_line(x, y - size, x, y + size, fill="red", tags="crosshair")
 
     def on_r_pressed(self, event):
+        self.nomograph.execute_last_transform()
+
         # Start tracking mouse for crosshair
         self.is_crosshair = True
 
@@ -413,13 +424,16 @@ class MainApp(tk.Tk):
 
         tk.Label(self.transform_child, text="Angle (degrees)").pack(pady=5)
 
+        self.crosshair_point = (0, 0)
         self.angle_var = tk.IntVar(value=0)
         self.angle_var.trace_add("write", self.on_rotate_changed)
         angle_slider = tk.Scale(
             self.transform_child,
             from_=0,
             to=360,
-            variable=self.angle_var
+            orient="horizontal",
+            variable=self.angle_var,
+            length=260
         )
         angle_slider.pack(fill="x", padx=20)
 
@@ -450,7 +464,8 @@ class MainApp(tk.Tk):
         self.update_canvas()
 
     def on_rotate_changed(self, *args):
-        self.nomograph.rotate(deg=self.angle_var.get())
+        px, py = self.crosshair_point
+        self.nomograph.rotate_point(px, py, deg=self.angle_var.get())
         self.nomograph.transform()
 
         self.update_canvas()

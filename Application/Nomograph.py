@@ -98,6 +98,24 @@ class Nomograph():
         # self.transformations.append(R)
         self.current_transformation = R
 
+    # Rotates around a point by and angle theta
+    def rotate_point(self, px, py, theta=None, deg=None):
+        if not(deg is None):
+            theta = deg * sp.pi / 180
+
+        cos = sp.cos(theta)
+        sin = sp.sin(theta)
+
+        R = sp.Matrix([
+            [cos, -sin, 0],
+            [sin, cos,  0],
+            [(1-cos)*px-sin*py, (1-cos)*py+sin*px, 1]
+        ])
+
+        # self.current_matrix = self.current_matrix * R
+        # self.transformations.append(R)
+        self.current_transformation = R
+
     # Shears the axes by their corresponding values
     def shear(self, theta_x, theta_y):
         S = sp.Matrix([
