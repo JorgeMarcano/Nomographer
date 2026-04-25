@@ -17,6 +17,7 @@ class MainApp(tk.Tk):
         self.nomograph.scale(100, 100)
         self.nomograph.execute_last_transform()
 
+        self.help_win = None
         self.create_menu()
 
         # Load data
@@ -33,6 +34,9 @@ class MainApp(tk.Tk):
         self.transform_child = None
         self.is_crosshair = False
         self.crosshair_point = (0, 0)
+
+        # Register validation command once
+        self.vcmd = (self.register(self.validate_numeric), "%P")
 
         # Build UI
         self.entries = []
@@ -61,9 +65,15 @@ class MainApp(tk.Tk):
         file_menu.add_command(label="Load", command=self.load_dialog)
         file_menu.add_command(label="Save", command=self.save_dialog)
         file_menu.add_separator()
+        file_menu.add_command(label="Print", command=self.print)
+        file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit)
 
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(label="Help", command=self.help)
+
         menubar.add_cascade(label="File", menu=file_menu)
+        menubar.add_cascade(label="Help", menu=help_menu)
         self.config(menu=menubar)
 
     # ---------- Create Window Elements ----------
@@ -212,9 +222,6 @@ class MainApp(tk.Tk):
         self.entries.clear()
         self.ranges.clear()
 
-        # Register validation command once
-        vcmd = (self.register(self.validate_numeric), "%P")
-
         if (count <= 0):
             return
 
@@ -246,7 +253,7 @@ class MainApp(tk.Tk):
                     row,
                     width=6,
                     validate="key",
-                    validatecommand=vcmd
+                    validatecommand=self.vcmd
                 )
                 temp_entry.insert(0, range_defaults[ind])
                 temp_entry.pack(side="left", padx=(0, 10))
@@ -503,10 +510,12 @@ class MainApp(tk.Tk):
 
     # ---------- Menu Actions ----------
     def new_file(self):
+        # TODO
         # messagebox.showinfo("New", "New document created.")
         pass
 
     def load_dialog(self):
+        # TODO
         # path = filedialog.askopenfilename(
         #     filetypes=[("JSON Files", "*.json")]
         # )
@@ -515,6 +524,7 @@ class MainApp(tk.Tk):
         pass
 
     def save_dialog(self):
+        # TODO
         # if not self.types:
         #     messagebox.showwarning("Save", "Nothing to save.")
         #     return
@@ -528,6 +538,33 @@ class MainApp(tk.Tk):
         #         json.dump({"types": self.types}, file, indent=2)
         #     messagebox.showinfo("Save", "File saved successfully.")
         pass
+
+    def print(self):
+        # TODO
+        # Deal with printing to a pdf
+        pass
+
+    def help(self):
+        if self.help_win is not None and self.help_win.winfo_exists():
+            return
+
+        self.help_win = tk.Toplevel(self)
+        self.help_win.title("Cheat Sheet")
+        self.help_win.resizable(False, False)  # ← prevents resizing
+
+        top_frame = ttk.Frame(self.help_win)
+        top_frame.pack(fill="x", padx=10, pady=10)
+
+        help_text = """This is a test
+        Line 2"""
+        # TODO
+
+        # Help Text label
+        tk.Label(
+            top_frame,
+            text=help_text,
+        ).pack()
+
 
 
 if __name__ == "__main__":
